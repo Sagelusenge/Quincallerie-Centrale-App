@@ -245,7 +245,7 @@ function getPrintIdentity() {
 }
 
 function printLayout({ title, badge, sections = [], table, note }) {
-  const win = window.open('', '_blank', 'width=900,height=700');
+  const win = window.open('', '_blank', 'width=430,height=700');
   if (!win) return;
   const identity = getPrintIdentity();
   const date = new Date().toLocaleDateString('fr-FR');
@@ -265,7 +265,7 @@ function printLayout({ title, badge, sections = [], table, note }) {
       <h2>${escapePrint(table.title || 'Details')}</h2>
       <table>
         <thead><tr>${table.headers.map((header) => `<th>${escapePrint(header)}</th>`).join('')}</tr></thead>
-        <tbody>${table.rows.map((row) => `<tr>${row.map((cell) => `<td>${escapePrint(cell)}</td>`).join('')}</tr>`).join('')}</tbody>
+        <tbody>${table.rows.map((row) => `<tr>${row.map((cell, index) => `<td data-label="${escapePrint(table.headers[index] || '')}">${escapePrint(cell)}</td>`).join('')}</tr>`).join('')}</tbody>
       </table>
       ${note ? `<p class="note">${escapePrint(note)}</p>` : ''}
     </section>
@@ -299,7 +299,32 @@ function printLayout({ title, badge, sections = [], table, note }) {
           .signature strong{display:block;font-size:13px;margin-bottom:10px}
           .signature span{display:block;font-size:13px;line-height:1.8}
           footer{border-top:1px solid #c9d2df;color:#475569;font-size:12px;margin-top:42px;padding-top:10px;text-align:center}
-          @media print{body{padding:10px}.page{max-width:none}.badge{background:#fff0cc!important}.info-card,.details{break-inside:avoid}}
+          @media print{
+            @page{size:80mm auto;margin:4mm}
+            body{padding:0;width:72mm}
+            .page{max-width:72mm;width:72mm}
+            .print-head{display:block;margin-bottom:10px;padding-bottom:8px}
+            .brand{gap:6px}
+            .print-logo{border-radius:5px;font-size:15px;height:28px;width:28px}
+            h1{font-size:17px;line-height:1.2;word-break:break-word}
+            .company{font-size:10px;line-height:1.4;margin-top:6px}
+            .doc-title{font-size:14px;margin-top:8px;text-align:left}
+            .badge{background:#fff0cc!important;font-size:10px;margin-top:6px;padding:5px 8px}
+            .info-grid{display:block;margin-bottom:8px}
+            .info-card,.details{break-inside:avoid;border-radius:5px;margin-bottom:8px;padding:8px}
+            h2{font-size:11px;margin-bottom:7px}
+            .info-row{display:grid;font-size:10px;gap:3px;grid-template-columns:25mm 1fr;line-height:1.35}
+            table,thead,tbody,tr,td{display:block;width:100%}
+            thead{display:none}
+            tr{border:1px solid #c9d2df;border-radius:4px;margin-bottom:6px;padding:4px}
+            td{border:0;display:grid;font-size:10px;grid-template-columns:25mm 1fr;line-height:1.25;padding:3px 0;word-break:break-word}
+            td::before{color:#002761;content:attr(data-label);font-weight:800;padding-right:4px}
+            .note{font-size:9px;line-height:1.35;margin-top:8px}
+            .signatures{display:block;margin-top:14px}
+            .signature{margin-top:20px;padding-top:7px}
+            .signature strong,.signature span{font-size:10px;line-height:1.5}
+            footer{font-size:9px;line-height:1.3;margin-top:18px;padding-top:8px}
+          }
         </style>
       </head>
       <body>
