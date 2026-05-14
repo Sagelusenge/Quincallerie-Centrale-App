@@ -641,6 +641,17 @@ tr:last-child td {
   gap: 14px;
 }
 
+.line-row {
+  align-items: end;
+  grid-template-columns: minmax(0, 1fr) minmax(104px, 0.42fr);
+}
+
+.line-row label,
+.line-row select,
+.line-row input {
+  min-width: 0;
+}
+
 .line-editor {
   display: grid;
   gap: 12px;
@@ -700,8 +711,15 @@ textarea {
   border-radius: 10px;
   color: var(--ink);
   min-height: 42px;
+  min-width: 0;
   padding: 9px 12px;
+  text-overflow: ellipsis;
   width: 100%;
+}
+
+select {
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 textarea {
@@ -1342,6 +1360,7 @@ body.theme-light .debt-preview {
   border-color: #b9bfce;
   color: #1d2130;
   border-radius: 3px;
+  min-width: 0;
 }
 
 .modal-submit {
