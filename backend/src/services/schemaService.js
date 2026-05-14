@@ -85,4 +85,6 @@ export const ensureRuntimeSchema = async (pool) => {
     if (productColumns.length === 0) {
         await pool.query(`ALTER TABLE produits ADD COLUMN categorie_id VARCHAR(50) NULL AFTER nom`);
     }
+
+    await addColumnIfMissing('produits', 'photo_url', 'TEXT NULL');
 };

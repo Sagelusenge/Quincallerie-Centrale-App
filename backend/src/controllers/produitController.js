@@ -44,7 +44,7 @@ export const getMouvementsStock = async (req, res) => {
 
 // POST /api/produits
 export const createProduit = async (req, res) => {
-    const { reference_produit, nom, categorie_id, prix_ht, taux_tva, quantite_stock, seuil_alerte } = req.body;
+    const { reference_produit, nom, categorie_id, photo_url, prix_ht, taux_tva, quantite_stock, seuil_alerte } = req.body;
     const entreprise_id = req.user.entreprise_id;
 
     if (!reference_produit || !nom || Number(prix_ht) <= 0) {
@@ -57,12 +57,13 @@ export const createProduit = async (req, res) => {
     try {
         await pool.query(
             `INSERT INTO produits
-             (reference_produit, nom, categorie_id, prix_ht, taux_tva, quantite_stock, seuil_alerte, entreprise_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+             (reference_produit, nom, categorie_id, photo_url, prix_ht, taux_tva, quantite_stock, seuil_alerte, entreprise_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 reference_produit,
                 nom,
                 categorie_id || null,
+                photo_url || null,
                 Number(prix_ht),
                 Number(taux_tva) || 16,
                 Number(quantite_stock) || 0,
@@ -79,7 +80,7 @@ export const createProduit = async (req, res) => {
 // PUT /api/produits/:id
 export const updateProduit = async (req, res) => {
     const { id } = req.params;
-    const { nom, categorie_id, prix_ht, taux_tva, seuil_alerte } = req.body;
+    const { nom, categorie_id, photo_url, prix_ht, taux_tva, seuil_alerte } = req.body;
     const entreprise_id = req.user.entreprise_id;
 
     if (!nom || Number(prix_ht) <= 0) {
@@ -89,9 +90,9 @@ export const updateProduit = async (req, res) => {
     try {
         const [result] = await pool.query(
             `UPDATE produits
-             SET nom = ?, categorie_id = ?, prix_ht = ?, taux_tva = ?, seuil_alerte = ?
+             SET nom = ?, categorie_id = ?, photo_url = ?, prix_ht = ?, taux_tva = ?, seuil_alerte = ?
              WHERE id_produit = ? AND entreprise_id = ?`,
-            [nom, categorie_id || null, Number(prix_ht), Number(taux_tva) || 16, Number(seuil_alerte) || 5, id, entreprise_id]
+            [nom, categorie_id || null, photo_url || null, Number(prix_ht), Number(taux_tva) || 16, Number(seuil_alerte) || 5, id, entreprise_id]
         );
 
         if (result.affectedRows === 0) {

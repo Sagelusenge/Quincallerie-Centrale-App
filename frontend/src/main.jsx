@@ -1121,7 +1121,8 @@ function Clients({ api, notify, data, submit, searchQuery = '' }) {
 }
 
 function Produits({ api, notify, data, submit, user, searchQuery = '' }) {
-  const [form, setForm] = useState({ reference_produit: '', nom: '', categorie_id: '', prix_ht: '', taux_tva: 16, quantite_stock: 0, seuil_alerte: 5 });
+  const emptyProductForm = { reference_produit: '', nom: '', categorie_id: '', photo_url: '', prix_ht: '', taux_tva: 16, quantite_stock: 0, seuil_alerte: 5 };
+  const [form, setForm] = useState(emptyProductForm);
   const [stock, setStock] = useState({ id: '', quantite: 1 });
   const [creating, setCreating] = useState(false);
   const [stocking, setStocking] = useState(false);
@@ -1183,7 +1184,7 @@ function Produits({ api, notify, data, submit, user, searchQuery = '' }) {
                 <article className="product-rank-card" key={p.id_produit}>
                   <b>#{index + 1}</b>
                   <div className="product-rank-visual">
-                    <img src={imageForIndex(index)} alt="" />
+                    <img src={p.photo_url || imageForIndex(index)} alt="" />
                   </div>
                   <strong>{p.nom}</strong>
                   <p>{p.categorie_nom || 'Sans categorie'} - Ref. {p.reference_produit}</p>
@@ -1218,12 +1219,13 @@ function Produits({ api, notify, data, submit, user, searchQuery = '' }) {
       </div>
       {creating && (
         <Modal title="Nouveau produit" onClose={() => setCreating(false)}>
-          <Form onSubmit={() => submit(async () => { await api('/produits', { method: 'POST', body: JSON.stringify(form) }); setCreating(false); notify('Produit cree'); })}>
+          <Form onSubmit={() => submit(async () => { await api('/produits', { method: 'POST', body: JSON.stringify(form) }); setForm(emptyProductForm); setCreating(false); notify('Produit cree'); })}>
             <div className="form-row">
               <Input label="Reference" value={form.reference_produit} onChange={(reference_produit) => setForm({ ...form, reference_produit })} required />
               <Input label="Designation" value={form.nom} onChange={(nom) => setForm({ ...form, nom })} required />
             </div>
             <Select label="Categorie" value={form.categorie_id} onChange={(categorie_id) => setForm({ ...form, categorie_id })} options={categoryOptions} required={false} />
+            <PhotoInput label="Photo du produit" value={form.photo_url} onChange={(photo_url) => setForm({ ...form, photo_url })} />
             <div className="form-row">
               <Input label="Prix HT" type="number" value={form.prix_ht} onChange={(prix_ht) => setForm({ ...form, prix_ht })} required />
               <Input label="TVA %" type="number" value={form.taux_tva} onChange={(taux_tva) => setForm({ ...form, taux_tva })} />
@@ -1250,6 +1252,7 @@ function Produits({ api, notify, data, submit, user, searchQuery = '' }) {
           <Form onSubmit={saveEdit}>
             <Input label="Designation" value={editing.nom || ''} onChange={(nom) => setEditing({ ...editing, nom })} required />
             <Select label="Categorie" value={editing.categorie_id || ''} onChange={(categorie_id) => setEditing({ ...editing, categorie_id })} options={categoryOptions} required={false} />
+            <PhotoInput label="Photo du produit" value={editing.photo_url || ''} onChange={(photo_url) => setEditing({ ...editing, photo_url })} />
             <div className="form-row">
               <Input label="Prix HT" type="number" value={editing.prix_ht || ''} onChange={(prix_ht) => setEditing({ ...editing, prix_ht })} required />
               <Input label="TVA %" type="number" value={editing.taux_tva || 16} onChange={(taux_tva) => setEditing({ ...editing, taux_tva })} />
@@ -2199,6 +2202,31 @@ function Modal({ title, children, onClose }) {
 
 function Input({ label, value, onChange, type = 'text', required = false }) {
   return <label>{label}<input type={type} value={value} onChange={(e) => onChange(e.target.value)} required={required} /></label>;
+}
+
+function PhotoInput({ label, value, onChange }) {
+  const loadFile = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => onChange(reader.result || '');
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <label>{label}
+      <div className="photo-input">
+        <input type="url" value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder="Coller une URL ou importer une image" />
+        <input type="file" accept="image/*" onChange={loadFile} />
+        {value && (
+          <div className="photo-preview">
+            <img src={value} alt="" />
+            <button className="action delete" type="button" onClick={() => onChange('')} title="Retirer photo"><Trash2 size={16} /></button>
+          </div>
+        )}
+      </div>
+    </label>
+  );
 }
 
 function Select({ label, value, onChange, options, required = true }) {

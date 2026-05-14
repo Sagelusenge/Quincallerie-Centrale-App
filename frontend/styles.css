@@ -2382,6 +2382,34 @@ button.kpi-card {
   width: 100%;
 }
 
+.photo-input {
+  display: grid;
+  gap: 10px;
+}
+
+.photo-input input[type="file"] {
+  background: #f8fafc;
+  cursor: pointer;
+  padding: 10px;
+}
+
+.photo-preview {
+  align-items: center;
+  border: 1px solid #d6dce8;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 96px auto;
+  padding: 10px;
+}
+
+.photo-preview img {
+  border-radius: 6px;
+  height: 72px;
+  object-fit: cover;
+  width: 96px;
+}
+
 .product-rank-card strong {
   color: #0057a8;
   font-size: 20px;
