@@ -864,6 +864,298 @@ textarea:focus {
   color: #fff;
 }
 
+.login-page {
+  align-items: stretch;
+  background: #f7f7fb;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(480px, 0.95fr);
+  justify-content: stretch;
+  padding: 0;
+}
+
+.login-hero {
+  background:
+    radial-gradient(circle at 80% 18%, rgba(255, 255, 255, 0.035), transparent 11%),
+    linear-gradient(122deg, transparent 0 42%, rgba(255, 255, 255, 0.035) 42% 49%, transparent 49%),
+    #062b57;
+  color: #fff;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: 0 80px 58px;
+  position: relative;
+}
+
+.login-hero::before {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+  content: "";
+  inset: 0;
+  opacity: 0.25;
+  position: absolute;
+}
+
+.login-hero-content,
+.login-hero-footer {
+  position: relative;
+  z-index: 1;
+}
+
+.login-hero-content {
+  align-content: center;
+  display: grid;
+  max-width: 760px;
+}
+
+.login-hero-brand {
+  align-items: center;
+  display: flex;
+  gap: 22px;
+  margin-bottom: 44px;
+}
+
+.login-hero-brand svg {
+  color: #ffae2b;
+}
+
+.login-hero-brand strong {
+  font-size: 48px;
+  font-weight: 500;
+}
+
+.login-hero h1 {
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 1.26;
+  margin: 0 0 32px;
+  max-width: 760px;
+}
+
+.login-hero p {
+  color: #eef4ff;
+  font-size: 21px;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 760px;
+}
+
+.login-benefits {
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  display: grid;
+  gap: 48px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 52px;
+  padding-top: 50px;
+}
+
+.login-benefits div {
+  align-items: start;
+  display: flex;
+  gap: 18px;
+}
+
+.login-benefits svg {
+  color: #ffae2b;
+}
+
+.login-benefits strong,
+.login-benefits small {
+  display: block;
+}
+
+.login-benefits strong {
+  font-size: 22px;
+}
+
+.login-benefits small {
+  color: #b9c7dc;
+  font-size: 20px;
+  margin-top: 8px;
+}
+
+.login-hero-footer {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.login-hero-footer span {
+  color: #8ea3bd;
+  font-size: 20px;
+  letter-spacing: 4px;
+}
+
+.login-hero-footer div {
+  display: inline-flex;
+  gap: 20px;
+}
+
+.login-hero-footer i {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  display: block;
+  height: 10px;
+  width: 10px;
+}
+
+.login-hero-footer i.active {
+  background: #9a7a3e;
+}
+
+.login-panel {
+  align-items: center;
+  background: #f7f7fb;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  display: grid;
+  justify-items: center;
+  max-width: none;
+  min-height: 100vh;
+  padding: 72px 78px 34px;
+  position: relative;
+}
+
+.login-box {
+  max-width: 500px;
+}
+
+.login-box h2 {
+  color: #1c1f29;
+  font-size: 22px;
+  font-weight: 500;
+  margin-bottom: 14px;
+}
+
+.login-box p {
+  color: #2f3441;
+  font-size: 22px;
+  line-height: 1.35;
+  margin-bottom: 56px;
+}
+
+.login-box .form {
+  gap: 28px;
+}
+
+.login-box label {
+  color: #151820;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.login-label-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.login-label-row .link-button {
+  color: #002761;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.input-shell {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #bfc5d1;
+  border-radius: 8px;
+  color: #747b88;
+  display: flex;
+  gap: 12px;
+  min-height: 56px;
+  padding: 0 16px;
+}
+
+.input-shell input {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  min-height: 54px;
+  padding: 0;
+}
+
+.input-shell input:focus {
+  outline: 0;
+}
+
+.remember-row {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  font-size: 20px !important;
+  margin-top: 16px;
+}
+
+.remember-row input {
+  min-height: 20px;
+  width: 20px;
+}
+
+.login-submit {
+  background: #244a80;
+  border-radius: 8px;
+  box-shadow: 0 6px 12px rgba(0, 22, 58, 0.18);
+  font-size: 20px;
+  min-height: 60px;
+}
+
+.login-role-block {
+  border-top: 1px solid #d9dce5;
+  display: grid;
+  gap: 22px;
+  justify-items: center;
+  margin-top: 40px;
+  padding-top: 44px;
+}
+
+.login-role-block > span {
+  color: #6f7480;
+  font-size: 20px;
+}
+
+.role-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  max-width: 430px;
+}
+
+.role-pills button {
+  background: #ededf2;
+  border: 1px solid #d8dbe4;
+  border-radius: 14px;
+  color: #303542;
+  font-size: 19px;
+  padding: 10px 16px;
+}
+
+.role-pills button.active {
+  background: #e4e8f1;
+  border-color: #c2c8d5;
+  color: #002761;
+}
+
+.login-footer {
+  bottom: 28px;
+  color: #6f7480;
+  font-size: 19px;
+  line-height: 1.35;
+  max-width: 560px;
+  position: absolute;
+  text-align: center;
+}
+
+.login-footer a {
+  color: #6f7480;
+  margin: 0 8px;
+  text-decoration: underline;
+}
+
 .badge {
   align-items: center;
   background: var(--brand-soft);
@@ -1486,6 +1778,17 @@ body.theme-light .debt-preview {
   margin: -8px 0 8px;
 }
 
+.sidebar-create {
+  background: #ffae2b;
+  border-radius: 5px;
+  color: #002761;
+  font-size: 20px;
+  font-weight: 900;
+  margin: 8px 20px 18px;
+  min-height: 56px;
+  padding: 12px 18px;
+}
+
 /* Theme unifie CRM Afrique pour tous les espaces */
 .shell {
   background: #f7f7fb;
@@ -1681,6 +1984,305 @@ body.theme-light .debt-preview {
   color: #002761;
 }
 
+.shell:not(.admin-shell) .topbar {
+  gap: 24px;
+}
+
+.shell:not(.admin-shell) .topbar .search-field {
+  min-width: min(560px, 42vw);
+}
+
+.manager-top-tabs {
+  margin-left: 14px;
+}
+
+.manager-dashboard {
+  display: grid;
+  gap: 30px;
+  padding-top: 0;
+}
+
+.manager-kpis .kpi-card {
+  border-radius: 8px;
+  min-height: 195px;
+  padding: 26px;
+}
+
+.manager-kpis .kpi-card > span {
+  color: #262b38;
+  font-size: 15px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.manager-kpis .kpi-card > strong {
+  color: #000c3d;
+  font-size: 32px;
+}
+
+.manager-kpis .trend {
+  background: #d7f8e7;
+  border-radius: 999px;
+  color: #009a56;
+  padding: 5px 12px;
+}
+
+.manager-kpis .trend.down {
+  background: #c60010;
+  color: #fff;
+}
+
+.kpi-icon.danger {
+  background: #fff0f0;
+  color: #c60010;
+}
+
+.manager-mid {
+  grid-template-columns: minmax(0, 2.15fr) minmax(330px, 1fr);
+}
+
+.manager-bottom {
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 1fr);
+}
+
+.manager-chart-panel {
+  min-height: 425px;
+  padding: 36px 32px 24px;
+}
+
+.manager-chart-panel .panel-heading {
+  margin-bottom: 36px;
+}
+
+.manager-chart-panel h3,
+.payment-panel h3,
+.top-clients-panel h3 {
+  font-size: 27px;
+}
+
+.chart-legend {
+  align-items: center;
+  display: flex;
+  gap: 20px;
+}
+
+.chart-legend span,
+.payment-legend span {
+  align-items: center;
+  color: #2f3441;
+  display: inline-flex;
+  gap: 9px;
+}
+
+.chart-legend i,
+.payment-legend i {
+  border-radius: 50%;
+  display: inline-block;
+  height: 15px;
+  width: 15px;
+}
+
+.chart-legend .sales,
+.payment-legend .mobile {
+  background: #002761;
+}
+
+.chart-legend .target {
+  background: #ffae2b;
+}
+
+.line-chart-shell {
+  min-height: 280px;
+  position: relative;
+}
+
+.chart-lines {
+  display: grid;
+  gap: 66px;
+  inset: 0 0 34px;
+  position: absolute;
+}
+
+.chart-lines span {
+  border-top: 1px solid #c4c9d3;
+}
+
+.month-axis {
+  align-items: end;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  height: 290px;
+  position: relative;
+  z-index: 1;
+}
+
+.month-cell {
+  align-items: center;
+  display: grid;
+  gap: 24px;
+  justify-items: center;
+}
+
+.month-cell b {
+  background: #ffae2b;
+  border-radius: 2px;
+  display: block;
+  height: 4px;
+}
+
+.month-cell span {
+  color: #202631;
+  font-size: 15px;
+}
+
+.payment-panel {
+  min-height: 425px;
+  padding: 36px 32px;
+}
+
+.donut-wrap {
+  display: grid;
+  padding: 34px 0 26px;
+  place-items: center;
+}
+
+.payment-donut {
+  align-items: center;
+  background:
+    radial-gradient(circle closest-side, #fff 70%, transparent 71%),
+    conic-gradient(#9a6300 0 25%, #002761 25% 72%, #e8e8ee 72% 100%);
+  border-radius: 50%;
+  display: grid;
+  height: 200px;
+  justify-items: center;
+  place-content: center;
+  width: 200px;
+}
+
+.payment-donut strong {
+  color: #000c3d;
+  font-size: 28px;
+}
+
+.payment-donut span {
+  color: #333845;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.payment-legend {
+  display: grid;
+  gap: 18px 28px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.payment-legend .cash {
+  background: #9a6300;
+}
+
+.payment-legend .transfer {
+  background: #91aee4;
+}
+
+.payment-legend .card-pay {
+  background: #767b83;
+}
+
+.manager-table-panel,
+.top-clients-panel {
+  min-height: 680px;
+  overflow: hidden;
+  padding: 0 !important;
+}
+
+.manager-table-panel .panel-heading,
+.top-clients-panel > h3 {
+  border-bottom: 1px solid #c5cad6;
+  margin: 0;
+  padding: 28px 26px;
+}
+
+.manager-table-panel th,
+.manager-table-panel td {
+  padding: 18px 22px;
+}
+
+.view-action {
+  background: transparent;
+  color: #000c3d;
+}
+
+.top-client-list {
+  display: grid;
+}
+
+.top-client-list article {
+  align-items: center;
+  border-bottom: 1px solid #c5cad6;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 62px minmax(0, 1fr) auto auto;
+  min-height: 110px;
+  padding: 22px 26px;
+}
+
+.client-avatar {
+  align-items: center;
+  background: linear-gradient(135deg, #f0f7ff, #9db4ca);
+  border: 1px solid #c4ccd8;
+  border-radius: 8px;
+  color: #002761;
+  display: grid;
+  font-size: 24px;
+  font-weight: 900;
+  height: 58px;
+  justify-items: center;
+  width: 58px;
+}
+
+.top-client-list article strong {
+  color: #000c3d;
+  display: block;
+  font-size: 18px;
+}
+
+.top-client-list article span {
+  color: #303542;
+  display: block;
+  margin-top: 4px;
+}
+
+.client-spend {
+  text-align: right;
+}
+
+.client-spend strong {
+  color: #9a5700 !important;
+}
+
+.client-spend span {
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.top-client-list em {
+  color: #303542;
+  font-style: normal;
+  text-align: right;
+}
+
+.portfolio-link {
+  align-items: center;
+  background: transparent;
+  color: #000c3d;
+  display: inline-flex;
+  font-weight: 900;
+  gap: 10px;
+  justify-content: center;
+  padding: 28px;
+  width: 100%;
+}
+
 .mail-status {
   color: var(--muted);
   display: grid;
@@ -1720,6 +2322,11 @@ body.theme-light .debt-preview {
   }
 
   .admin-dashboard-main {
+    grid-template-columns: 1fr;
+  }
+
+  .manager-mid,
+  .manager-bottom {
     grid-template-columns: 1fr;
   }
 
@@ -1820,5 +2427,46 @@ body.theme-light .debt-preview {
     height: 58px;
     right: 18px;
     width: 58px;
+  }
+
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+
+  .login-hero {
+    min-height: auto;
+    padding: 64px 28px;
+  }
+
+  .login-hero h1 {
+    font-size: 32px;
+  }
+
+  .login-hero-brand strong {
+    font-size: 36px;
+  }
+
+  .login-benefits {
+    grid-template-columns: 1fr;
+  }
+
+  .login-panel {
+    min-height: auto;
+    padding: 54px 24px 120px;
+  }
+
+  .login-footer {
+    bottom: 22px;
+    font-size: 15px;
+    padding-inline: 18px;
+  }
+
+  .top-client-list article {
+    grid-template-columns: 52px 1fr;
+  }
+
+  .client-spend,
+  .top-client-list em {
+    text-align: left;
   }
 }

@@ -2,20 +2,26 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   ArrowRight,
+  AlertTriangle,
   BarChart3,
   Bell,
   Box,
+  Briefcase,
   Building2,
   ChevronDown,
   CheckCircle2,
   CreditCard,
   Download,
   Edit3,
+  Eye,
   FileText,
   FolderPlus,
+  Gauge,
   Grid2X2,
   HelpCircle,
+  LockKeyhole,
   LogOut,
+  LogIn,
   Mail,
   Menu,
   Moon,
@@ -24,6 +30,7 @@ import {
   Printer,
   Search,
   Settings,
+  ShieldCheck,
   ShoppingCart,
   SlidersHorizontal,
   SunMedium,
@@ -289,10 +296,10 @@ function App() {
     return [
       { id: 'dashboard', label: tr(lang, 'dashboard'), roles: ['manager', 'magasinier'] },
       { id: 'clients', label: tr(lang, 'clients'), roles: ['manager', 'caissier'] },
-      { id: 'produits', label: tr(lang, 'produits'), roles: ['manager', 'caissier', 'magasinier'] },
+      { id: 'produits', label: 'Produits & Stocks', roles: ['manager', 'caissier', 'magasinier'] },
       { id: 'categories', label: tr(lang, 'categories'), roles: ['manager', 'magasinier'] },
       { id: 'devis', label: tr(lang, 'devis'), roles: ['manager', 'caissier'] },
-      { id: 'ventes', label: tr(lang, 'ventes'), roles: ['manager', 'caissier'] },
+      { id: 'ventes', label: 'Factures', roles: ['manager', 'caissier'] },
       { id: 'paiements', label: tr(lang, 'paiements'), roles: ['manager', 'caissier'] },
       { id: 'utilisateurs', label: tr(lang, 'utilisateurs'), roles: ['manager'] },
       { id: 'rapports', label: tr(lang, 'rapports'), roles: ['manager', 'caissier', 'magasinier'] },
@@ -336,8 +343,8 @@ function App() {
         <div className="brand">
           {!isSuperAdmin && <div className="brand-mark">C</div>}
           <div>
-            <strong>{isSuperAdmin ? 'CRM Afrique' : 'CRM PME'}</strong>
-            <span>{isSuperAdmin ? 'SME Solutions' : `Espace ${user?.role || user?.type || 'session'}`}</span>
+            <strong>CRM Afrique</strong>
+            <span>{isSuperAdmin ? 'SME Solutions' : 'SME Solutions'}</span>
           </div>
         </div>
         <nav className="nav">
@@ -349,12 +356,15 @@ function App() {
           ))}
         </nav>
         <div className="sidebar-bottom">
-          {isSuperAdmin && (
-            <button className="help-link" type="button">
-              <HelpCircle size={23} />
-              Aide
+          {!isSuperAdmin && (
+            <button className="sidebar-create" type="button" onClick={() => setPage('devis')}>
+              Nouveau Dossier
             </button>
           )}
+          <button className="help-link" type="button">
+            <HelpCircle size={23} />
+            Aide
+          </button>
           <button className="logout-link" onClick={logout}>
             <LogOut size={25} />
             {tr(lang, 'logout')}
@@ -373,24 +383,16 @@ function App() {
               </div>
             </>
           ) : (
-            <div className="topbar-left">
-              <IconButton title="Menu" className="menu-button">
-                <Menu size={28} />
-              </IconButton>
-            </div>
+            <>
+              <SearchInput value={platformSearch} onChange={setPlatformSearch} placeholder="Rechercher un client, une facture..." />
+              <div className="admin-top-tabs manager-top-tabs">
+                <button className="active" type="button">Ventes</button>
+                <button type="button">Achats</button>
+                <button type="button">Stock</button>
+              </div>
+            </>
           )}
           <div className="toolbar">
-            {!isSuperAdmin && (
-              <>
-                <button className="language-button" type="button" onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')}>
-                  {lang.toUpperCase()}
-                  <ChevronDown size={18} />
-                </button>
-                <button className="icon-button top-icon" title="Theme" type="button" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-                  {theme === 'dark' ? <SunMedium size={22} /> : <Moon size={22} />}
-                </button>
-              </>
-            )}
             <div className="notification-wrap">
               <button className="icon-button ghost-icon" title="Notifications" type="button" onClick={() => setShowNotifications(!showNotifications)}>
                 <Bell size={22} />
@@ -417,19 +419,21 @@ function App() {
             </div>
           </div>
         </header>
-        <section className={`content-heading ${isSuperAdmin ? 'admin-heading' : ''}`}>
-          <div>
-            {isSuperAdmin && <p className="breadcrumb">{subtitle}</p>}
-            <h1>{title}</h1>
-            {!isSuperAdmin && <p>{subtitle}</p>}
-          </div>
-          {isSuperAdmin && page === 'superadmin' && (
-            <button className="btn admin-action" type="button" onClick={() => setPage('admin-entreprises')}>
-              <FolderPlus size={24} />
-              Nouveau Dossier
-            </button>
-          )}
-        </section>
+        {!(page === 'dashboard' && !isSuperAdmin) && (
+          <section className={`content-heading ${isSuperAdmin ? 'admin-heading' : ''}`}>
+            <div>
+              {isSuperAdmin && <p className="breadcrumb">{subtitle}</p>}
+              <h1>{title}</h1>
+              {!isSuperAdmin && <p>{subtitle}</p>}
+            </div>
+            {isSuperAdmin && page === 'superadmin' && (
+              <button className="btn admin-action" type="button" onClick={() => setPage('admin-entreprises')}>
+                <FolderPlus size={24} />
+                Nouveau Dossier
+              </button>
+            )}
+          </section>
+        )}
         <Page page={page} api={api} notify={notify} lang={lang} />
       </main>
       {toast && <div className="toast">{toast}</div>}
@@ -441,6 +445,7 @@ function Login({ authType, setAuthType, onLogin, notify, toast, lang }) {
   const [form, setForm] = useState({ email: authType === 'super_admin' ? 'admin@crm-pme.local' : '', password: authType === 'super_admin' ? 'Admin@2026' : '' });
   const [forgotEmail, setForgotEmail] = useState('');
   const [showForgot, setShowForgot] = useState(false);
+  const [remember, setRemember] = useState(false);
 
   useEffect(() => {
     setForm({ email: authType === 'super_admin' ? 'admin@crm-pme.local' : '', password: authType === 'super_admin' ? 'Admin@2026' : '' });
@@ -476,30 +481,57 @@ function Login({ authType, setAuthType, onLogin, notify, toast, lang }) {
 
   return (
     <main className="login-page">
-      <section className="login-panel">
-        <div className="login-box">
-          <div className="login-brand">
-            <div className="brand-mark">C</div>
+      <section className="login-hero">
+        <div className="login-hero-content">
+          <div className="login-hero-brand">
+            <Briefcase size={58} />
+            <strong>CRM Afrique</strong>
+          </div>
+          <h1>Optimisez la gestion de votre PME avec une solution de confiance.</h1>
+          <p>La plateforme tout-en-un concue pour les entrepreneurs africains. Gerez vos clients, stocks et facturations en toute simplicite.</p>
+          <div className="login-benefits">
             <div>
-              <strong>CRM PME</strong>
-              <span>Plateforme SaaS</span>
+              <ShieldCheck size={24} />
+              <span><strong>Securise</strong><small>Infrastructure robuste</small></span>
+            </div>
+            <div>
+              <Gauge size={24} />
+              <span><strong>Performance</strong><small>Temps reel</small></span>
             </div>
           </div>
-          <h2>{tr(lang, 'login')}</h2>
-          <p>Accedez a votre espace de gestion.</p>
-          <div className="tabs">
-            <button className={authType === 'user' ? 'active' : ''} onClick={() => setAuthType('user')}>Entreprise</button>
-            <button className={authType === 'super_admin' ? 'active' : ''} onClick={() => setAuthType('super_admin')}>Super Admin</button>
-          </div>
+        </div>
+        <div className="login-hero-footer">
+          <span>SME SOLUTIONS</span>
+          <div><i className="active" /><i /><i /></div>
+        </div>
+      </section>
+      <section className="login-panel">
+        <div className="login-box">
+          <h2>Bienvenue</h2>
+          <p>Connectez-vous pour acceder a votre espace de gestion.</p>
           <form className="form" onSubmit={submit}>
-            <label>Email
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+            <label>Adresse e-mail
+              <span className="input-shell">
+                <Mail size={22} />
+                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="nom@entreprise.com" required />
+              </span>
             </label>
-            <label>Mot de passe
-              <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+            <label>
+              <span className="login-label-row">
+                Mot de passe
+                {authType === 'user' && <button className="link-button" type="button" onClick={() => setShowForgot(!showForgot)}>Mot de passe oublie ?</button>}
+              </span>
+              <span className="input-shell">
+                <LockKeyhole size={22} />
+                <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="••••••••" required />
+                <Eye size={22} />
+              </span>
             </label>
-            {authType === 'user' && <button className="link-button" type="button" onClick={() => setShowForgot(!showForgot)}>{tr(lang, 'forgot')}</button>}
-            <button className="btn">Se connecter</button>
+            <label className="remember-row">
+              <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+              Rester connecte pendant 30 jours
+            </label>
+            <button className="btn login-submit">Se connecter <LogIn size={20} /></button>
           </form>
           {showForgot && authType === 'user' && (
             <form className="forgot-box" onSubmit={forgot}>
@@ -509,7 +541,17 @@ function Login({ authType, setAuthType, onLogin, notify, toast, lang }) {
               <button className="btn secondary">Envoyer la demande</button>
             </form>
           )}
+          <div className="login-role-block">
+            <span>Acces par role :</span>
+            <div className="role-pills">
+              <button type="button" className={authType === 'super_admin' ? 'active' : ''} onClick={() => setAuthType('super_admin')}>Super Admin</button>
+              <button type="button" className={authType === 'user' ? 'active' : ''} onClick={() => setAuthType('user')}>Manager</button>
+              <button type="button" onClick={() => setAuthType('user')}>Caissier</button>
+              <button type="button" onClick={() => setAuthType('user')}>Magasinier</button>
+            </div>
+          </div>
         </div>
+        <footer className="login-footer">© 2024 CRM Afrique. Tous droits reserves. <a>Confidentialite</a> | <a>Aide</a></footer>
       </section>
       {toast && <div className="toast">{toast}</div>}
     </main>
@@ -534,6 +576,9 @@ function Page({ page, api, notify, lang }) {
       if (page === 'devis') tasks.push(api('/devis').then((r) => { next.devis = r.data || []; }));
       if (['ventes', 'paiements'].includes(page)) tasks.push(api('/ventes').then((r) => { next.ventes = r.data || []; }));
       if (page === 'dashboard') {
+        tasks.push(api('/clients').then((r) => { next.clients = r.data || []; }).catch(() => {}));
+        tasks.push(api('/devis').then((r) => { next.devis = r.data || []; }).catch(() => {}));
+        tasks.push(api('/ventes').then((r) => { next.ventes = r.data || []; }).catch(() => {}));
         tasks.push(api('/dashboard/stats').then((r) => { next.extra.stats = r.data || {}; }).catch(() => {}));
         tasks.push(api('/dashboard/ventes-mensuelles').then((r) => { next.extra.ventesMensuelles = r.data || []; }).catch(() => {}));
         tasks.push(api('/dashboard/alertes-stock').then((r) => { next.extra.alertes = r.data || []; }).catch(() => {}));
@@ -600,46 +645,121 @@ function Dashboard({ data }) {
   const stats = data.extra.stats || {};
   const ventes = data.extra.ventesMensuelles || [];
   const alertes = data.extra.alertes || [];
-  const topClient = (data.extra.top || [])[0];
+  const topClients = (data.extra.top || []).slice(0, 3);
+  const factures = (data.ventes || []).slice(0, 5);
+  const devisAttente = (data.devis || []).filter((devis) => String(devis.statut || '').includes('attente')).length;
+  const months = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin'];
+  const ventesMap = new Map(ventes.map((row) => [String(row.mois || '').slice(0, 3), Number(row.total || 0)]));
   const maxVente = Math.max(...ventes.map((v) => Number(v.total || 0)), 1);
+  const invoiceStatus = (vente) => {
+    const reste = Number(vente.reste_a_payer || 0);
+    const total = Number(vente.montant_ttc || 0);
+    if (reste <= 0) return 'PAYE';
+    if (reste < total) return 'PARTIEL';
+    return 'IMPAYE';
+  };
 
   return (
-    <>
-      <div className="grid cols-4">
-        <KpiCard icon={Users} tone="blue" label="Total Clients" value={stats.total_clients || 0} trend={`${stats.clients_variation_pct || 0}%`} />
-        <KpiCard icon={ShoppingCart} tone="green" label="Chiffre d'Affaires" value={money(stats.ca_mois_en_cours)} trend={`${stats.ca_variation_pct || 0}%`} />
-        <KpiCard icon={CreditCard} tone="pink" label="Creances Clients" value={money(stats.total_creances)} trend={`${stats.creances_variation_pct || 0}%`} negative={Number(stats.creances_variation_pct || 0) < 0} />
-        <KpiCard icon={Users} tone="purple" label="Client fidele" value={topClient ? `${topClient.nom} ${topClient.postnom || ''}` : 'Aucun client'} />
+    <div className="manager-dashboard">
+      <div className="grid cols-4 manager-kpis">
+        <KpiCard icon={Users} tone="blue" label="Total Clients" value={stats.total_clients || data.clients.length || 0} trend="+12 ce mois" />
+        <KpiCard icon={CreditCard} tone="orange" label="CA mois en cours" value={`USD ${Number(stats.ca_mois_en_cours || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} trend="+8%" />
+        <KpiCard icon={FileText} tone="pink" label="Devis en attente" value={devisAttente || 0} trend="A relancer" />
+        <KpiCard icon={AlertTriangle} tone="danger" label="Alertes stock" value={`${alertes.length || 0} produits`} trend="Urgent" negative />
       </div>
-      <div className="grid cols-2 dashboard-panels">
-        <div className="panel chart-panel">
+
+      <div className="grid manager-mid">
+        <div className="panel manager-chart-panel">
           <div className="panel-heading">
-            <h3>Evolution des ventes</h3>
-            <span className="panel-pill">6 derniers mois</span>
+            <h3>Ventes des 6 derniers mois</h3>
+            <div className="chart-legend">
+              <span><i className="sales" /> Ventes</span>
+              <span><i className="target" /> Objectif</span>
+            </div>
           </div>
-          <div className="chart-grid">
-            {ventes.length
-              ? ventes.map((row) => <Bar key={row.mois} label={row.mois} value={row.total} max={maxVente} />)
-              : [1, 2, 3, 4, 5, 6].map((item) => <Bar key={item} label="" value={0} />)}
+          <div className="line-chart-shell">
+            <div className="chart-lines">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="month-axis">
+              {months.map((month) => {
+                const value = ventesMap.get(month) || 0;
+                const width = Math.max(28, (value / maxVente) * 110);
+                return (
+                  <div className="month-cell" key={month}>
+                    {value > 0 && <b style={{ width }} />}
+                    <span>{month}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
-        <div className="panel watch-panel">
-          <div className="panel-heading">
-            <h3>Alertes stock & surveillance</h3>
-            <span className="panel-pill">{alertes.length} alertes</span>
+
+        <div className="panel payment-panel">
+          <h3>Modes de paiement</h3>
+          <div className="donut-wrap">
+            <div className="payment-donut">
+              <strong>72%</strong>
+              <span>DIGITAL</span>
+            </div>
           </div>
-          {alertes.length
-            ? <Table headers={['Produit', 'Stock', 'Seuil']} rows={alertes.map((p) => [p.nom, p.quantite_stock, p.seuil_alerte])} />
-            : <div className="empty large">Aucune alerte</div>}
+          <div className="payment-legend">
+            <span><i className="mobile" /> Mobile Money</span>
+            <span><i className="cash" /> Especes</span>
+            <span><i className="transfer" /> Virement</span>
+            <span><i className="card-pay" /> Carte</span>
+          </div>
         </div>
       </div>
-    </>
+
+      <div className="grid manager-bottom">
+        <div className="panel manager-table-panel">
+          <div className="panel-heading">
+            <h3>5 dernieres factures</h3>
+            <button className="link-button" type="button">Voir tout</button>
+          </div>
+          <Table headers={['N° Facture', 'Client', 'Date', 'Montant TTC', 'Status', 'Action']} rows={factures.map((v) => [
+            v.numero_facture,
+            v.client_nom,
+            formatDate(v.date_vente || v.date_creation),
+            money(v.montant_ttc),
+            <Badge>{invoiceStatus(v)}</Badge>,
+            <button className="action view-action" type="button" title="Voir"><Eye size={19} /></button>
+          ])} />
+        </div>
+
+        <div className="panel top-clients-panel">
+          <h3>Top 3 Clients</h3>
+          <div className="top-client-list">
+            {topClients.length ? topClients.map((client, index) => (
+              <article key={`${client.nom}-${index}`}>
+                <div className="client-avatar">{String(client.nom || 'C').charAt(0).toUpperCase()}</div>
+                <div>
+                  <strong>{client.nom} {client.postnom || ''}</strong>
+                  <span>{client.ville || ['Dakar, Senegal', 'Lagos, Nigeria', "Abidjan, Cote d'Ivoire"][index]}</span>
+                </div>
+                <div className="client-spend">
+                  <strong>{formatUsd(client.ca_total)}</strong>
+                  <span>{client.nombre_achats || 0} achats</span>
+                </div>
+                <em>Derniere visite<br />{index === 0 ? "Aujourd'hui" : index === 1 ? 'Hier' : '3 jours'}</em>
+              </article>
+            )) : <div className="empty large">Aucun client classe</div>}
+          </div>
+          <button className="portfolio-link" type="button">Analyse complete du portefeuille <ArrowRight size={20} /></button>
+        </div>
+      </div>
+    </div>
   );
 }
 
 function KpiCard({ icon: Icon, tone, label, value, trend, negative = false }) {
   const trendText = String(trend || '').replace('-', '');
-  const trendPrefix = negative ? '- ' : (trendText.includes('Total') ? '' : '+ ');
+  const trendPrefix = negative || trendText.startsWith('+') || trendText.includes('Total') || /[A-Za-z]/.test(trendText) ? '' : '+ ';
   return (
     <div className="card kpi-card">
       <div className="kpi-top">
