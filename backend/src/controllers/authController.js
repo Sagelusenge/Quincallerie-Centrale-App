@@ -165,6 +165,50 @@ export const changePassword = async (req, res) => {
     }
 };
 
+export const resetRequestedPassword = async (req, res) => {
+    const { email, new_password } = req.body;
+
+    if (!email || !new_password) {
+        return res.status(400).json({ success: false, message: 'Email et nouveau mot de passe requis' });
+    }
+
+    if (String(new_password).length < 6) {
+        return res.status(400).json({ success: false, message: 'Le nouveau mot de passe doit contenir au moins 6 caracteres' });
+    }
+
+    try {
+        const params = [email];
+        let scope = '';
+
+        if (req.user?.type !== 'super_admin') {
+            if (req.user?.role !== 'manager') {
+                return res.status(403).json({ success: false, message: 'Seul un manager peut reinitialiser un mot de passe utilisateur.' });
+            }
+            scope = ' AND entreprise_id = ?';
+            params.push(req.user.entreprise_id);
+        }
+
+        const [users] = await pool.query(
+            `SELECT id_utilisateur FROM utilisateur WHERE email = ? AND actif = 1${scope}`,
+            params
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({ success: false, message: 'Utilisateur introuvable pour cette demande' });
+        }
+
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+        await pool.query(
+            'UPDATE utilisateur SET mot_de_passe = ? WHERE id_utilisateur = ?',
+            [hashedPassword, users[0].id_utilisateur]
+        );
+
+        res.json({ success: true, message: `Mot de passe reinitialise pour ${email}` });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 export const forgotPassword = async (req, res) => {
     const { email } = req.body;
 

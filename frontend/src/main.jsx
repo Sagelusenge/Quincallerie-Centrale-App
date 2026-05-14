@@ -71,6 +71,14 @@ const searchPlaceholders = {
   'admin-parametres': 'Rechercher un parametre...'
 };
 
+const imageForIndex = (index) => [
+  'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=500&q=80',
+  'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=500&q=80',
+  'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=500&q=80',
+  'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=80',
+  'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=500&q=80'
+][index % 5];
+
 const translations = {
   fr: {
     dashboard: 'Tableau de bord',
@@ -253,6 +261,7 @@ function App() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [platformSearch, setPlatformSearch] = useState('');
   const [showPasswordSettings, setShowPasswordSettings] = useState(false);
+  const [passwordTargetEmail, setPasswordTargetEmail] = useState('');
 
   const notify = (message) => {
     setToast(message);
@@ -365,13 +374,13 @@ function App() {
     return [
       { id: 'dashboard', label: tr(lang, 'dashboard'), roles: ['manager', 'magasinier'] },
       { id: 'clients', label: tr(lang, 'clients'), roles: ['manager', 'caissier'] },
-      { id: 'produits', label: 'Produits & Stocks', roles: ['manager', 'caissier', 'magasinier'] },
-      { id: 'categories', label: tr(lang, 'categories'), roles: ['manager', 'magasinier'] },
       { id: 'devis', label: tr(lang, 'devis'), roles: ['manager', 'caissier'] },
       { id: 'ventes', label: 'Factures', roles: ['manager', 'caissier'] },
       { id: 'paiements', label: tr(lang, 'paiements'), roles: ['manager', 'caissier'] },
-      { id: 'utilisateurs', label: tr(lang, 'utilisateurs'), roles: ['manager'] },
+      { id: 'produits', label: 'Produits & Stocks', roles: ['manager', 'caissier', 'magasinier'] },
+      { id: 'categories', label: tr(lang, 'categories'), roles: ['manager', 'magasinier'] },
       { id: 'rapports', label: tr(lang, 'rapports'), roles: ['manager', 'caissier', 'magasinier'] },
+      { id: 'utilisateurs', label: tr(lang, 'utilisateurs'), roles: ['manager'] },
       { id: 'mails', label: tr(lang, 'mails'), roles: ['manager'] }
     ].filter((item) => item.roles.includes(role));
   }, [authType, user, lang]);
@@ -388,6 +397,9 @@ function App() {
 
   const openNotificationTarget = async (notification) => {
     setShowNotifications(false);
+    const text = `${notification?.titre || ''} ${notification?.message || ''}`;
+    const targetEmail = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || '';
+    setPasswordTargetEmail(targetEmail);
     if (notification?.id_notification) {
       api(`/notifications/${notification.id_notification}/read`, { method: 'PUT', body: '{}' })
         .then(() => setNotifications((items) => items.map((item) => (
@@ -492,10 +504,10 @@ function App() {
             )}
           </section>
         )}
-        <Page page={page} api={api} notify={notify} lang={lang} user={user} searchQuery={platformSearch} />
+        <Page page={page} api={api} notify={notify} lang={lang} user={user} searchQuery={platformSearch} setPage={setPage} />
       </main>
       {showPasswordSettings && (
-        <PasswordSettings api={api} notify={notify} user={user} isSuperAdmin={isSuperAdmin} onClose={() => setShowPasswordSettings(false)} />
+        <PasswordSettings api={api} notify={notify} user={user} targetEmail={passwordTargetEmail} isSuperAdmin={isSuperAdmin} onClose={() => { setShowPasswordSettings(false); setPasswordTargetEmail(''); }} />
       )}
       {toast && <div className="toast">{toast}</div>}
     </div>
@@ -504,6 +516,8 @@ function App() {
 
 function Login({ onLogin, notify, toast }) {
   const [form, setForm] = useState({ email: '', password: '' });
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [showForgot, setShowForgot] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const passwordRef = useRef(null);
 
@@ -525,6 +539,24 @@ function Login({ onLogin, notify, toast }) {
       passwordRef.current?.focus();
       passwordRef.current?.setSelectionRange(start, end);
     });
+  };
+
+  const forgot = async (event) => {
+    event.preventDefault();
+    try {
+      const response = await fetch(`${API_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail })
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.message || 'Demande impossible');
+      notify(body.message);
+      setShowForgot(false);
+      setForgotEmail('');
+    } catch (error) {
+      notify(error.message);
+    }
   };
 
   return (
@@ -574,9 +606,18 @@ function Login({ onLogin, notify, toast }) {
                   <Eye size={22} />
                 </button>
               </span>
+              <button className="forgot-inline" type="button" onClick={() => setShowForgot(!showForgot)}>Mot de passe oublie ?</button>
             </label>
             <button className="btn login-submit">Se connecter <LogIn size={20} /></button>
           </form>
+          {showForgot && (
+            <form className="forgot-box" onSubmit={forgot}>
+              <label>Email de recuperation
+                <input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required />
+              </label>
+              <button className="btn secondary">Envoyer la demande</button>
+            </form>
+          )}
           <div className="login-card-footer">Copyright 2026 CRM PME</div>
         </div>
       </section>
@@ -585,21 +626,24 @@ function Login({ onLogin, notify, toast }) {
   );
 }
 
-function PasswordSettings({ api, notify, user, isSuperAdmin, onClose }) {
+function PasswordSettings({ api, notify, user, targetEmail, isSuperAdmin, onClose }) {
   const [form, setForm] = useState({ new_password: '', confirm_password: '' });
+  const accountEmail = targetEmail || user?.email || '';
 
   const save = async () => {
     if (form.new_password !== form.confirm_password) {
       notify('Les mots de passe ne correspondent pas');
       return;
     }
-    if (isSuperAdmin) {
-      notify('La reconfiguration super admin se fait dans les parametres plateforme');
-      onClose();
-      return;
+    if (targetEmail && targetEmail !== user?.email) {
+      await api('/auth/reset-request-password', { method: 'POST', body: JSON.stringify({ email: targetEmail, new_password: form.new_password }) });
+      notify(`Mot de passe reinitialise pour ${targetEmail}`);
+    } else if (isSuperAdmin) {
+      notify('Selectionnez une notification contenant l email du demandeur.');
+    } else {
+      await api('/auth/change-password', { method: 'POST', body: JSON.stringify(form) });
+      notify('Mot de passe mis a jour');
     }
-    await api('/auth/change-password', { method: 'POST', body: JSON.stringify(form) });
-    notify('Mot de passe mis a jour');
     onClose();
   };
 
@@ -608,7 +652,7 @@ function PasswordSettings({ api, notify, user, isSuperAdmin, onClose }) {
       <Form onSubmit={() => save().catch((error) => notify(error.message))}>
         <div className="debt-preview">
           <span>Identifiant</span>
-          <strong>{user?.email || 'Utilisateur connecte'}</strong>
+          <strong>{accountEmail || 'Demande sans email detecte'}</strong>
         </div>
         <Input label="Nouveau mot de passe" type="password" value={form.new_password} onChange={(new_password) => setForm({ ...form, new_password })} required />
         <Input label="Confirmer le mot de passe" type="password" value={form.confirm_password} onChange={(confirm_password) => setForm({ ...form, confirm_password })} required />
@@ -618,7 +662,7 @@ function PasswordSettings({ api, notify, user, isSuperAdmin, onClose }) {
   );
 }
 
-function Page({ page, api, notify, lang, user, searchQuery }) {
+function Page({ page, api, notify, lang, user, searchQuery, setPage }) {
   const [data, setData] = useState({ clients: [], produits: [], categories: [], devis: [], ventes: [], extra: {} });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -689,8 +733,8 @@ function Page({ page, api, notify, lang, user, searchQuery }) {
   if (loading) return <div className="panel">Chargement...</div>;
   if (error) return <p className="notice">{error}</p>;
 
-  const props = { api, notify, data, submit, lang, user, searchQuery };
-  if (page === 'dashboard') return <Dashboard data={data} searchQuery={searchQuery} />;
+  const props = { api, notify, data, submit, lang, user, searchQuery, setPage };
+  if (page === 'dashboard') return <Dashboard data={data} searchQuery={searchQuery} setPage={setPage} />;
   if (page === 'clients') return <Clients {...props} />;
   if (page === 'produits') return <Produits {...props} />;
   if (page === 'devis') return <Devis {...props} />;
@@ -708,8 +752,9 @@ function Page({ page, api, notify, lang, user, searchQuery }) {
   return null;
 }
 
-function Dashboard({ data, searchQuery = '' }) {
+function Dashboard({ data, searchQuery = '', setPage }) {
   const [selectedPaymentMode, setSelectedPaymentMode] = useState('');
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
   const stats = data.extra.stats || {};
   const ventes = data.extra.ventesMensuelles || [];
   const alertes = data.extra.alertes || [];
@@ -756,10 +801,10 @@ function Dashboard({ data, searchQuery = '' }) {
   return (
     <div className="manager-dashboard">
       <div className="grid cols-4 manager-kpis">
-        <KpiCard icon={Users} tone="blue" label="Total Clients" value={stats.total_clients || data.clients.length || 0} />
-        <KpiCard icon={CreditCard} tone="orange" label="CA mois en cours" value={`USD ${Number(stats.ca_mois_en_cours || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-        <KpiCard icon={FileText} tone="pink" label="Devis en attente" value={devisAttente || 0} />
-        <KpiCard icon={AlertTriangle} tone="danger" label="Alertes stock" value={`${alertes.length || 0} produits`} trend="Urgent" negative />
+        <KpiCard icon={Users} tone="blue" label="Total Clients" value={stats.total_clients || data.clients.length || 0} onClick={() => setPage?.('clients')} />
+        <KpiCard icon={CreditCard} tone="orange" label="CA mois en cours" value={`USD ${Number(stats.ca_mois_en_cours || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} onClick={() => setPage?.('ventes')} />
+        <KpiCard icon={FileText} tone="pink" label="Devis en attente" value={devisAttente || 0} onClick={() => setPage?.('devis')} />
+        <KpiCard icon={AlertTriangle} tone="danger" label="Alertes stock" value={`${alertes.length || 0} produits`} trend="Urgent" negative onClick={() => setPage?.('produits')} />
       </div>
 
       <div className="grid manager-mid">
@@ -824,7 +869,7 @@ function Dashboard({ data, searchQuery = '' }) {
         <div className="panel manager-table-panel">
           <div className="panel-heading">
             <h3>5 dernieres factures</h3>
-            <button className="link-button" type="button">Voir tout</button>
+            <button className="link-button" type="button" onClick={() => setPage?.('ventes')}>Voir tout</button>
           </div>
           <Table headers={['N° Facture', 'Client', 'Date', 'Montant TTC', 'Status', 'Action']} rows={factures.map((v) => [
             v.numero_facture,
@@ -832,7 +877,7 @@ function Dashboard({ data, searchQuery = '' }) {
             formatDate(v.date_vente || v.date_creation),
             money(v.montant_ttc),
             <Badge>{invoiceStatus(v)}</Badge>,
-            <button className="action view-action" type="button" title="Voir"><Eye size={19} /></button>
+            <button className="action view-action" type="button" title="Voir" onClick={() => setSelectedInvoice(v)}><Eye size={19} /></button>
           ])} />
         </div>
 
@@ -854,7 +899,7 @@ function Dashboard({ data, searchQuery = '' }) {
               </article>
             )) : <div className="empty large">Aucun client classe</div>}
           </div>
-          <button className="portfolio-link" type="button">Analyse complete du portefeuille <ArrowRight size={20} /></button>
+          <button className="portfolio-link" type="button" onClick={() => setPage?.('clients')}>Analyse complete du portefeuille <ArrowRight size={20} /></button>
         </div>
       </div>
 
@@ -894,6 +939,16 @@ function Dashboard({ data, searchQuery = '' }) {
           formatDate(m.date_mouvement)
         ])} />
       </div>
+      {selectedInvoice && (
+        <Modal title={`Facture ${selectedInvoice.numero_facture}`} onClose={() => setSelectedInvoice(null)}>
+          <div className="user-history">
+            <Stat label="Client" value={selectedInvoice.client_nom || '-'} />
+            <Stat label="Montant" value={money(selectedInvoice.montant_ttc)} />
+            <Stat label="Reste" value={money(selectedInvoice.reste_a_payer)} />
+          </div>
+          <button className="btn modal-submit" type="button" onClick={() => printDocument('Facture', [['Facture', selectedInvoice.numero_facture], ['Client', selectedInvoice.client_nom], ['Montant', money(selectedInvoice.montant_ttc)], ['Paye', money(selectedInvoice.total_paye)], ['Reste', money(selectedInvoice.reste_a_payer)]])}><Printer size={18} /> Imprimer</button>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -1076,6 +1131,7 @@ function Produits({ api, notify, data, submit, user, searchQuery = '' }) {
   const categoryOptions = [['', 'Sans categorie'], ...data.categories.map((c) => [c.id_categorie, c.nom])];
   const canManageProducts = user?.role !== 'caissier';
   const term = `${searchQuery} ${query}`.trim().toLowerCase();
+  const visibleCategories = data.categories.length ? data.categories : [{ id_categorie: 'all', nom: 'Tous les produits' }];
   const produits = data.produits
     .filter((p) => `${p.reference_produit} ${p.nom} ${p.categorie_nom || ''}`.toLowerCase().includes(term))
     .filter((p) => statusFilter === 'tous' || p.statut_stock === statusFilter);
@@ -1093,9 +1149,12 @@ function Produits({ api, notify, data, submit, user, searchQuery = '' }) {
   };
   return (
     <>
-      <div className="panel">
-        <div className="panel-heading product-toolbar">
-          <h3>Catalogue</h3>
+      <div className="panel product-market">
+        <div className="panel-heading product-toolbar product-market-heading">
+          <div>
+            <h3>Meilleures ventes du catalogue</h3>
+            <p>Produits classes selon le stock et les ventes de votre entreprise.</p>
+          </div>
           <div className="actions">
             <SearchInput value={query} onChange={setQuery} placeholder="Rechercher produit ou categorie" />
             <select className="compact-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
@@ -1109,28 +1168,39 @@ function Produits({ api, notify, data, submit, user, searchQuery = '' }) {
           </div>
         </div>
         {!canManageProducts && <div className="notice">Votre role permet de consulter les produits, sans ajout ni modification.</div>}
-        <div className="product-card-grid">
-          {produits.map((p) => (
-            <article className="product-card" key={p.id_produit}>
-              <div className="product-photo">{String(p.nom || 'P').charAt(0).toUpperCase()}</div>
-              <div className="product-card-body">
-                <div className="product-card-title">
+        <div className="product-market-layout">
+          <aside className="category-market-nav">
+            <strong>Categories</strong>
+            {visibleCategories.map((c) => <span key={c.id_categorie}>{c.nom}</span>)}
+          </aside>
+          <div className="category-rank-zone">
+            <div className="category-rank-header">
+              <h4>Produits populaires</h4>
+              <span>Page 1 sur 1</span>
+            </div>
+            <div className="product-rank-list">
+              {produits.map((p, index) => (
+                <article className="product-rank-card" key={p.id_produit}>
+                  <b>#{index + 1}</b>
+                  <div className="product-rank-visual">
+                    <img src={imageForIndex(index)} alt="" />
+                  </div>
                   <strong>{p.nom}</strong>
-                  <Badge>{p.statut_stock}</Badge>
-                </div>
-                <p>{p.categorie_nom || 'Sans categorie'} - Ref. {p.reference_produit}</p>
-                <div className="product-meta">
-                  <span>{money(p.prix_ht)}</span>
-                  <span>Stock {p.quantite_stock}</span>
-                </div>
-                <div className="actions">
-                  {canManageProducts && <button className="action edit" type="button" title="Modifier" onClick={() => setEditing(p)}><Edit3 size={17} /></button>}
-                  <button className="action print-action" type="button" title="Imprimer" onClick={() => printDocument('Fiche produit', [['Reference', p.reference_produit], ['Produit', p.nom], ['Prix HT', money(p.prix_ht)], ['Stock', p.quantite_stock], ['Statut', p.statut_stock]])}><Printer size={17} /></button>
-                  {user?.role === 'manager' && <button className="action delete" type="button" title="Supprimer" onClick={() => remove(p)}><Trash2 size={17} /></button>}
-                </div>
-              </div>
-            </article>
-          ))}
+                  <p>{p.categorie_nom || 'Sans categorie'} - Ref. {p.reference_produit}</p>
+                  <div className="product-rank-meta">
+                    <span>{money(p.prix_ht)}</span>
+                    <Badge>{p.statut_stock}</Badge>
+                    <em>Stock {p.quantite_stock}</em>
+                  </div>
+                  <div className="actions">
+                    {canManageProducts && <button className="action edit" type="button" title="Modifier" onClick={() => setEditing(p)}><Edit3 size={17} /></button>}
+                    <button className="action print-action" type="button" title="Imprimer" onClick={() => printDocument('Fiche produit', [['Reference', p.reference_produit], ['Produit', p.nom], ['Prix HT', money(p.prix_ht)], ['Stock', p.quantite_stock], ['Statut', p.statut_stock]])}><Printer size={17} /></button>
+                    {user?.role === 'manager' && <button className="action delete" type="button" title="Supprimer" onClick={() => remove(p)}><Trash2 size={17} /></button>}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
       <div className="panel" style={{ marginTop: 16 }}>
@@ -1399,7 +1469,9 @@ function Paiements({ api, notify, data, submit, searchQuery = '' }) {
   const [form, setForm] = useState({ vente_id: '', montant: '', mode_paiement: 'especes', reference_externe: '', telephone_payeur: '' });
   const [creating, setCreating] = useState(false);
   const [query, setQuery] = useState('');
-  const selectedFacture = factures.find((v) => v.id_ventes === (form.vente_id || factures[0]?.id_ventes));
+  const [invoiceQuery, setInvoiceQuery] = useState('');
+  const filteredFactures = factures.filter((v) => `${v.numero_facture} ${v.client_nom || ''} ${v.reste_a_payer || ''}`.toLowerCase().includes(invoiceQuery.toLowerCase()));
+  const selectedFacture = filteredFactures.find((v) => v.id_ventes === (form.vente_id || filteredFactures[0]?.id_ventes)) || factures.find((v) => v.id_ventes === form.vente_id);
   const term = `${searchQuery} ${query}`.trim().toLowerCase();
   const caisseRows = (data.extra.caisse || []).filter((r) => `${r.Date} ${r.Mode_Paiement} ${r.Total_Encaisse}`.toLowerCase().includes(term));
   return (
@@ -1416,8 +1488,9 @@ function Paiements({ api, notify, data, submit, searchQuery = '' }) {
       </div>
       {creating && (
         <Modal title="Encaisser un paiement" onClose={() => setCreating(false)}>
-          <Form onSubmit={() => submit(async () => { await api('/paiements', { method: 'POST', body: JSON.stringify({ ...form, vente_id: form.vente_id || factures[0]?.id_ventes }) }); setCreating(false); notify('Paiement enregistre'); })}>
-            <Select label="Facture" value={form.vente_id} onChange={(vente_id) => setForm({ ...form, vente_id })} options={factures.map((v) => [v.id_ventes, `${v.numero_facture} - reste ${money(v.reste_a_payer)}`])} />
+          <Form onSubmit={() => submit(async () => { await api('/paiements', { method: 'POST', body: JSON.stringify({ ...form, vente_id: form.vente_id || filteredFactures[0]?.id_ventes || factures[0]?.id_ventes }) }); setCreating(false); notify('Paiement enregistre'); })}>
+            <SearchInput value={invoiceQuery} onChange={setInvoiceQuery} placeholder="Rechercher une facture ou un client" />
+            <Select label="Facture" value={form.vente_id} onChange={(vente_id) => setForm({ ...form, vente_id })} options={filteredFactures.map((v) => [v.id_ventes, `${v.numero_facture} - ${v.client_nom} - reste ${money(v.reste_a_payer)}`])} />
             <div className="form-row">
               <Input label="Montant" type="number" value={form.montant} onChange={(montant) => setForm({ ...form, montant })} required />
               <Select label="Mode" value={form.mode_paiement} onChange={(mode_paiement) => setForm({ ...form, mode_paiement })} options={[['especes', 'Especes'], ['mobile_money', 'Mobile Money'], ['carte', 'Carte'], ['virement', 'Virement']]} />
@@ -1708,7 +1781,7 @@ function Categories({ api, notify, data, submit, searchQuery = '' }) {
                 <article className="category-rank-card" key={c.id_categorie}>
                   <b>#{index + 1}</b>
                   <div className="category-rank-visual">
-                    <Tags size={46} />
+                    <img src={imageForIndex(index + 2)} alt="" />
                   </div>
                   <strong>{c.nom}</strong>
                   <p>{c.description || 'Aucune description'}</p>
