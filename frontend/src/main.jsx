@@ -222,31 +222,139 @@ function RowActions({ onEdit, onPrint, onDelete, onToggle, toggleLabel }) {
   );
 }
 
-function printDocument(title, rows) {
+function escapePrint(value) {
+  return String(value ?? '-')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function getPrintIdentity() {
+  try {
+    const user = JSON.parse(localStorage.getItem('crm_user') || 'null');
+    return {
+      company: user?.entreprise_nom || user?.raison_sociale || 'CRM PME',
+      subtitle: user?.role ? `Espace ${user.role}` : 'Gestion commerciale',
+      contact: user?.email || ''
+    };
+  } catch {
+    return { company: 'CRM PME', subtitle: 'Gestion commerciale', contact: '' };
+  }
+}
+
+function printLayout({ title, badge, sections = [], table, note }) {
   const win = window.open('', '_blank', 'width=900,height=700');
   if (!win) return;
-  const content = rows.map(([label, value]) => `<tr><th>${label}</th><td>${value ?? '-'}</td></tr>`).join('');
+  const identity = getPrintIdentity();
+  const date = new Date().toLocaleDateString('fr-FR');
+  const sectionHtml = sections.map((section) => `
+    <section class="info-card">
+      <h2>${escapePrint(section.title)}</h2>
+      ${section.rows.map(([label, value]) => `
+        <div class="info-row">
+          <strong>${escapePrint(label)}</strong>
+          <span>${escapePrint(value)}</span>
+        </div>
+      `).join('')}
+    </section>
+  `).join('');
+  const tableHtml = table ? `
+    <section class="details">
+      <h2>${escapePrint(table.title || 'Details')}</h2>
+      <table>
+        <thead><tr>${table.headers.map((header) => `<th>${escapePrint(header)}</th>`).join('')}</tr></thead>
+        <tbody>${table.rows.map((row) => `<tr>${row.map((cell) => `<td>${escapePrint(cell)}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table>
+      ${note ? `<p class="note">${escapePrint(note)}</p>` : ''}
+    </section>
+  ` : '';
   win.document.write(`
     <html>
       <head>
-        <title>${title}</title>
+        <title>${escapePrint(title)}</title>
         <style>
-          body{font-family:Arial,sans-serif;padding:32px;color:#111827}
-          .print-head{align-items:center;border-bottom:3px solid #002761;display:flex;gap:14px;margin-bottom:24px;padding-bottom:18px}
-          .print-logo{align-items:center;background:#002761;border-radius:8px;color:#ffae2b;display:grid;font-size:22px;font-weight:900;height:54px;justify-items:center;width:54px}
-          h1{margin:0;font-size:25px;color:#002761}
-          .print-sub{color:#64748b;font-size:13px;margin-top:4px}
+          *{box-sizing:border-box}
+          body{background:#ffffff;color:#050b2f;font-family:Arial,sans-serif;margin:0;padding:18px}
+          .page{margin:0 auto;max-width:920px}
+          .print-head{align-items:flex-start;border-bottom:3px solid #002761;display:flex;justify-content:space-between;margin-bottom:24px;padding-bottom:14px}
+          .brand{align-items:center;display:flex;gap:12px}
+          .print-logo{align-items:center;background:#ffae2b;border-radius:7px;color:#002761;display:grid;font-size:22px;font-weight:900;height:46px;justify-items:center;width:46px}
+          h1{color:#002761;font-size:25px;margin:0;text-transform:uppercase}
+          .company{font-size:13px;line-height:1.7;margin-top:8px}
+          .doc-title{font-size:20px;font-weight:900;text-align:right;text-transform:uppercase}
+          .badge{background:#fff0cc;border-radius:999px;color:#002761;display:inline-block;font-size:13px;font-weight:800;margin-top:10px;padding:8px 14px}
+          .info-grid{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:20px}
+          .info-card,.details{border:1px solid #c9d2df;border-radius:8px;padding:14px}
+          h2{color:#002761;font-size:15px;margin:0 0 12px;text-transform:uppercase}
+          .info-row{display:grid;grid-template-columns:140px 1fr;gap:10px;font-size:13px;line-height:1.7}
+          .info-row strong{color:#002761}
           table{border-collapse:collapse;width:100%}
-          th,td{border-bottom:1px solid #e5e7eb;padding:14px;text-align:left}
-          th{width:220px;background:#f8fafc}
+          th,td{border:1px solid #c9d2df;font-size:14px;padding:9px;text-align:left;vertical-align:top}
+          th{background:#002761;color:#ffffff}
+          .note{font-size:12px;margin:14px 0 2px}
+          .signatures{display:grid;gap:38px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:26px}
+          .signature{border-top:1px solid #111827;padding-top:10px}
+          .signature strong{display:block;font-size:13px;margin-bottom:10px}
+          .signature span{display:block;font-size:13px;line-height:1.8}
+          footer{border-top:1px solid #c9d2df;color:#475569;font-size:12px;margin-top:42px;padding-top:10px;text-align:center}
+          @media print{body{padding:10px}.page{max-width:none}.badge{background:#fff0cc!important}.info-card,.details{break-inside:avoid}}
         </style>
       </head>
-      <body><div class="print-head"><div class="print-logo">CRM</div><div><h1>${title}</h1><div class="print-sub">CRM PME - Document imprime</div></div></div><table>${content}</table></body>
+      <body>
+        <main class="page">
+          <header class="print-head">
+            <div>
+              <div class="brand"><div class="print-logo">C</div><h1>${escapePrint(identity.company)}</h1></div>
+              <div class="company">${escapePrint(identity.subtitle)}<br>${escapePrint(identity.contact || 'Document genere par CRM PME')}</div>
+            </div>
+            <div>
+              <div class="doc-title">${escapePrint(title)}</div>
+              <span class="badge">${escapePrint(badge || date)}</span>
+            </div>
+          </header>
+          <div class="info-grid">${sectionHtml}</div>
+          ${tableHtml}
+          <div class="signatures">
+            <div class="signature"><strong>Pour ${escapePrint(identity.company)}</strong><span>Nom : ........................................</span><span>Date : .... / .... / 2026</span></div>
+            <div class="signature"><strong>Pour le demandeur</strong><span>Nom : ........................................</span><span>Date : .... / .... / 2026</span></div>
+          </div>
+          <footer>${escapePrint(identity.company)} - Etat imprime depuis CRM PME</footer>
+        </main>
+      </body>
     </html>
   `);
   win.document.close();
   win.focus();
   win.print();
+}
+
+function printDocument(title, rows) {
+  const badgeRow = rows.find(([label]) => ['Facture', 'Numero', 'Entreprise'].includes(label));
+  printLayout({
+    title,
+    badge: badgeRow?.[1],
+    sections: [
+      { title: 'Informations', rows },
+      { title: 'Controle', rows: [['Date', new Date().toLocaleDateString('fr-FR')], ['Document', title], ['Statut', 'Valide']] }
+    ],
+    table: { title: 'Details', headers: ['Element', 'Valeur'], rows },
+    note: 'Ce document est genere automatiquement depuis CRM PME.'
+  });
+}
+
+function printTableDocument(title, headers, rows, options = {}) {
+  printLayout({
+    title,
+    badge: options.badge,
+    sections: [
+      { title: 'Resume', rows: [['Periode', options.period || 'Actuelle'], ['Lignes', rows.length], ['Date', new Date().toLocaleDateString('fr-FR')]] },
+      { title: 'Source', rows: [['Application', 'CRM PME'], ['Etat', title], ['Devise', 'USD']] }
+    ],
+    table: { title: options.tableTitle || 'Details commerciaux', headers, rows },
+    note: options.note || 'Cet etat de sortie est transmis par CRM PME pour consultation et archivage.'
+  });
 }
 
 function App() {
@@ -1541,22 +1649,11 @@ function Rapports({ data, searchQuery = '' }) {
   const top = (source.top || []).filter((r) => !term || `${r.nom} ${r.postnom || ''}`.toLowerCase().includes(term));
   const [period, setPeriod] = useState('journalier');
   const printRows = (title, headers, rows) => {
-    const win = window.open('', '_blank', 'width=1000,height=720');
-    if (!win) return;
-    win.document.write(`
-      <html><head><title>${title}</title><style>
-        body{font-family:Arial,sans-serif;color:#111827;padding:28px}
-        h1{font-size:24px;margin:0 0 18px}
-        table{border-collapse:collapse;width:100%}
-        th,td{border:1px solid #dbe3ef;padding:10px;text-align:left;font-size:13px}
-        th{background:#f1f5f9}
-      </style></head><body>
-      <h1>${title}</h1><table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead>
-      <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c ?? '-'}</td>`).join('')}</tr>`).join('')}</tbody></table>
-      </body></html>
-    `);
-    win.document.close();
-    win.print();
+    printTableDocument(title, headers, rows, {
+      badge: period.toUpperCase(),
+      period,
+      tableTitle: 'Details commerciaux'
+    });
   };
   return (
     <div className="grid">
