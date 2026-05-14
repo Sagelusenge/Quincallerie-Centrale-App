@@ -1,23 +1,23 @@
 :root {
-  --bg: #0b1220;
-  --sidebar: #0f1828;
-  --sidebar-soft: #121d31;
-  --panel: #111a2b;
-  --panel-2: #0f1727;
-  --ink: #eef4ff;
-  --muted: #a8b4c7;
-  --faint: #748197;
-  --line: #243249;
-  --brand: #3b82f6;
-  --brand-2: #2563eb;
-  --brand-soft: #17376d;
-  --accent: #f59e0b;
-  --danger: #fb7185;
-  --danger-soft: #3b2232;
-  --ok: #34d399;
-  --ok-soft: #15362e;
-  --warn-soft: #3b2d1f;
-  --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+  --bg: #f7f7fb;
+  --sidebar: #102743;
+  --sidebar-soft: #17355c;
+  --panel: #ffffff;
+  --panel-2: #f7f7fb;
+  --ink: #000c3d;
+  --muted: #5f6574;
+  --faint: #8d93a3;
+  --line: #c6cad6;
+  --brand: #002761;
+  --brand-2: #001d49;
+  --brand-soft: #edf1f6;
+  --accent: #ffa51f;
+  --danger: #c60010;
+  --danger-soft: #fff0f0;
+  --ok: #008f5a;
+  --ok-soft: #d7f8e7;
+  --warn-soft: #fff2cf;
+  --shadow: 0 24px 70px rgba(5, 13, 32, 0.12);
 }
 
 * {
@@ -33,26 +33,12 @@ body {
   min-height: 100vh;
   font-family: Poppins, Inter, Segoe UI, Arial, sans-serif;
   font-size: 14px;
-  background:
-    radial-gradient(circle at 86% -12%, rgba(59, 130, 246, 0.16), transparent 34%),
-    linear-gradient(135deg, #0b1220 0%, #0d1524 42%, #09101d 100%);
+  background: #f7f7fb;
   color: var(--ink);
 }
 
 body.theme-light {
-  --bg: #eef3f9;
-  --sidebar: #ffffff;
-  --panel: #ffffff;
-  --panel-2: #f8fafc;
-  --ink: #111827;
-  --muted: #64748b;
-  --faint: #94a3b8;
-  --line: #d9e2ef;
-  --brand-soft: #dbeafe;
-  --danger-soft: #ffe4e6;
-  --ok-soft: #dcfce7;
-  --warn-soft: #fef3c7;
-  background: #eef3f9;
+  background: #f7f7fb;
 }
 
 button,
@@ -739,6 +725,37 @@ textarea:focus {
   justify-content: center;
   min-height: 100vh;
   padding: 24px;
+}
+
+.app-crash {
+  align-items: center;
+  background: #f7f7fb;
+  color: #000c3d;
+  display: grid;
+  min-height: 100vh;
+  padding: 24px;
+  place-items: center;
+}
+
+.app-crash section {
+  background: #fff;
+  border: 1px solid #c5cad6;
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(5, 13, 32, 0.12);
+  display: grid;
+  gap: 14px;
+  max-width: 520px;
+  padding: 30px;
+  width: 100%;
+}
+
+.app-crash h1,
+.app-crash p {
+  margin: 0;
+}
+
+.app-crash p {
+  color: #5f6574;
 }
 
 .login-visual {
@@ -1467,6 +1484,201 @@ body.theme-light .debt-preview {
 .settings-panel p {
   line-height: 1.6;
   margin: -8px 0 8px;
+}
+
+/* Theme unifie CRM Afrique pour tous les espaces */
+.shell {
+  background: #f7f7fb;
+}
+
+.shell:not(.admin-shell) {
+  grid-template-columns: 300px minmax(0, 1fr);
+}
+
+.shell:not(.admin-shell) .sidebar {
+  background: #102743;
+  border-right-color: #213653;
+  padding: 32px 0 18px;
+}
+
+.shell:not(.admin-shell) .brand {
+  padding: 0 30px 24px;
+}
+
+.shell:not(.admin-shell) .brand-mark {
+  background: #ffa51f;
+  border-radius: 8px;
+  box-shadow: none;
+  color: #002761;
+  height: 46px;
+  width: 46px;
+}
+
+.shell:not(.admin-shell) .brand strong {
+  color: #ffa51f;
+  font-size: 26px;
+}
+
+.shell:not(.admin-shell) .brand span {
+  color: #c5cede;
+}
+
+.shell:not(.admin-shell) .nav {
+  gap: 0;
+}
+
+.shell:not(.admin-shell) .nav button {
+  border-left: 5px solid transparent;
+  border-radius: 0;
+  color: #c3ccdd;
+  font-weight: 700;
+  min-height: 60px;
+  padding: 15px 30px;
+}
+
+.shell:not(.admin-shell) .nav button:hover {
+  background: #17355c;
+  color: #fff;
+}
+
+.shell:not(.admin-shell) .nav button.active {
+  background: #17355c;
+  border-left-color: #ffa51f;
+  box-shadow: none;
+  color: #ffa51f;
+}
+
+.shell:not(.admin-shell) .logout-link {
+  color: #ff3b3b;
+  font-size: 16px;
+  padding-left: 30px;
+}
+
+.shell:not(.admin-shell) .main {
+  background: #f7f7fb;
+  padding: 0 30px 34px;
+}
+
+.shell:not(.admin-shell) .topbar {
+  background: rgba(247, 247, 251, 0.94);
+  border-bottom-color: #ccd0db;
+  min-height: 80px;
+}
+
+.shell:not(.admin-shell) .menu-button {
+  background: #fff;
+  border-color: #c6cad6;
+  color: #002761;
+}
+
+.shell:not(.admin-shell) .icon-button,
+.shell:not(.admin-shell) .language-button {
+  background: #fff;
+  border-color: #c6cad6;
+  color: #161a27;
+}
+
+.shell:not(.admin-shell) .ghost-icon {
+  background: transparent;
+  border-color: transparent;
+}
+
+.shell:not(.admin-shell) .user-card strong {
+  color: #000c3d;
+  text-transform: none;
+}
+
+.shell:not(.admin-shell) .user-card span {
+  color: #424755;
+  text-transform: uppercase;
+}
+
+.shell:not(.admin-shell) .content-heading h1 {
+  color: #000c3d;
+}
+
+.shell:not(.admin-shell) .content-heading p {
+  color: #5f6574;
+}
+
+.shell:not(.admin-shell) .panel,
+.shell:not(.admin-shell) .card {
+  background: #fff;
+  border-color: #c5cad6;
+  border-radius: 8px;
+  box-shadow: none;
+  color: #1f2533;
+}
+
+.shell:not(.admin-shell) .panel h3 {
+  color: #000c3d;
+}
+
+.shell:not(.admin-shell) .kpi-card strong,
+.shell:not(.admin-shell) .stat strong {
+  color: #000c3d;
+}
+
+.shell:not(.admin-shell) .kpi-card span,
+.shell:not(.admin-shell) .stat span {
+  color: #303542;
+}
+
+.shell:not(.admin-shell) th {
+  background: #e9e9ee;
+  color: #272b35;
+  letter-spacing: 1px;
+}
+
+.shell:not(.admin-shell) td {
+  color: #1f2533;
+}
+
+.shell:not(.admin-shell) td strong {
+  color: #000c3d;
+}
+
+.shell:not(.admin-shell) tr:nth-child(even) td {
+  background: #fff8f8;
+}
+
+.shell:not(.admin-shell) .search-field,
+.shell:not(.admin-shell) input,
+.shell:not(.admin-shell) select,
+.shell:not(.admin-shell) textarea {
+  background: #f4f4f8;
+  border-color: #b9bfce;
+  border-radius: 4px;
+  color: #1d2130;
+}
+
+.shell:not(.admin-shell) .btn {
+  background: #002761;
+  border-radius: 4px;
+}
+
+.shell:not(.admin-shell) .btn:hover {
+  background: #001d49;
+}
+
+.shell:not(.admin-shell) .btn.secondary {
+  background: #f1f4f8;
+  border: 1px solid #c6cad6;
+  color: #002761;
+}
+
+.shell:not(.admin-shell) .action {
+  border-radius: 4px;
+}
+
+.shell:not(.admin-shell) .create-launcher {
+  min-height: 220px;
+}
+
+.shell:not(.admin-shell) .launcher-icon,
+.shell:not(.admin-shell) .settings-icon {
+  background: #edf1f6;
+  color: #002761;
 }
 
 .mail-status {

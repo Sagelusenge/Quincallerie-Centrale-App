@@ -20,6 +20,7 @@ import {
   Menu,
   Moon,
   Package,
+  Plus,
   Printer,
   Search,
   Settings,
@@ -81,6 +82,32 @@ const translations = {
 };
 
 const tr = (lang, key) => translations[lang]?.[key] || translations.fr[key] || key;
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <main className="app-crash">
+          <section>
+            <h1>Interface indisponible</h1>
+            <p>{this.state.error.message || 'Une erreur est survenue pendant le chargement.'}</p>
+            <button className="btn" type="button" onClick={() => window.location.reload()}>Recharger</button>
+          </section>
+        </main>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const statusClass = (value) => {
   const text = String(value || '');
@@ -1593,4 +1620,8 @@ function Select({ label, value, onChange, options, required = true }) {
   );
 }
 
-createRoot(document.querySelector('#app')).render(<App />);
+createRoot(document.querySelector('#app')).render(
+  <ErrorBoundary>
+    <App />
+  </ErrorBoundary>
+);
