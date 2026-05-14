@@ -62,3 +62,23 @@ export const getRapportCaisse = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+export const getRepartitionPaiements = async (req, res) => {
+    const entreprise_id = req.user.entreprise_id;
+    try {
+        const [rows] = await pool.query(
+            `SELECT p.mode_paiement,
+                    COUNT(*) AS transactions,
+                    IFNULL(SUM(p.montant), 0) AS total
+             FROM paiement p
+             JOIN ventes v ON v.id_ventes = p.vente_id
+             WHERE v.entreprise_id = ?
+             GROUP BY p.mode_paiement
+             ORDER BY total DESC`,
+            [entreprise_id]
+        );
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

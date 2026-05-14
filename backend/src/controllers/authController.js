@@ -136,10 +136,10 @@ export const getMe = async (req, res) => {
 };
 
 export const changePassword = async (req, res) => {
-    const { current_password, new_password } = req.body;
+    const { new_password } = req.body;
 
-    if (!current_password || !new_password) {
-        return res.status(400).json({ success: false, message: 'Mot de passe actuel et nouveau mot de passe requis' });
+    if (!new_password) {
+        return res.status(400).json({ success: false, message: 'Nouveau mot de passe requis' });
     }
 
     if (String(new_password).length < 6) {
@@ -147,22 +147,10 @@ export const changePassword = async (req, res) => {
     }
 
     try {
-        const [users] = await pool.query(
-            'SELECT id_utilisateur, mot_de_passe FROM utilisateur WHERE id_utilisateur = ? AND actif = 1',
-            [req.user.id]
-        );
+        const [users] = await pool.query('SELECT id_utilisateur FROM utilisateur WHERE id_utilisateur = ? AND actif = 1', [req.user.id]);
 
         if (users.length === 0) {
             return res.status(404).json({ success: false, message: 'Utilisateur non trouve' });
-        }
-
-        const user = users[0];
-        const isMatch = user.mot_de_passe.startsWith('$2')
-            ? await bcrypt.compare(current_password, user.mot_de_passe)
-            : crypto.createHash('sha256').update(current_password).digest('hex') === user.mot_de_passe;
-
-        if (!isMatch) {
-            return res.status(401).json({ success: false, message: 'Mot de passe actuel incorrect' });
         }
 
         const hashedPassword = await bcrypt.hash(new_password, 10);

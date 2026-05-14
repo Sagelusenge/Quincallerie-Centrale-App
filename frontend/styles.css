@@ -1976,6 +1976,15 @@ body.theme-light .debt-preview {
   padding: 26px;
 }
 
+button.kpi-card {
+  text-align: left;
+}
+
+.kpi-card.active {
+  border-color: #002761;
+  box-shadow: 0 18px 36px rgba(0, 39, 97, 0.16);
+}
+
 .manager-kpis .kpi-card > span {
   color: #262b38;
   font-size: 15px;
@@ -2003,6 +2012,33 @@ body.theme-light .debt-preview {
 .kpi-icon.danger {
   background: #fff0f0;
   color: #c60010;
+}
+
+.dashboard-focus-panel {
+  align-items: center;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(240px, 0.8fr);
+}
+
+.dashboard-focus-panel span {
+  background: #edf1f6;
+  border-radius: 999px;
+  color: #002761;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 8px 12px;
+}
+
+.dashboard-focus-panel strong,
+.dashboard-focus-panel b {
+  color: #000c3d;
+  font-size: 20px;
+}
+
+.dashboard-focus-panel p {
+  color: #5f6574;
+  margin: 0;
 }
 
 .manager-mid {
@@ -2086,10 +2122,16 @@ body.theme-light .debt-preview {
 
 .activity-month {
   align-items: end;
+  background: transparent;
   display: grid;
   gap: 10px;
   justify-items: center;
   min-width: 0;
+  padding: 0;
+}
+
+.activity-month:hover .activity-track {
+  border-color: #002761;
 }
 
 .activity-month strong {
@@ -2135,9 +2177,6 @@ body.theme-light .debt-preview {
 
 .payment-donut {
   align-items: center;
-  background:
-    radial-gradient(circle closest-side, #fff 70%, transparent 71%),
-    conic-gradient(#9a6300 0 25%, #002761 25% 72%, #e8e8ee 72% 100%);
   border-radius: 50%;
   display: grid;
   height: 200px;
@@ -2159,20 +2198,32 @@ body.theme-light .debt-preview {
 
 .payment-legend {
   display: grid;
-  gap: 18px 28px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  grid-template-columns: 1fr;
 }
 
-.payment-legend .cash {
-  background: #9a6300;
+.payment-legend button {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d6dce8;
+  border-radius: 8px;
+  color: #202631;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 10px 12px;
+  text-align: left;
 }
 
-.payment-legend .transfer {
-  background: #91aee4;
+.payment-legend button.active,
+.payment-legend button:hover {
+  border-color: #002761;
+  box-shadow: 0 10px 22px rgba(0, 39, 97, 0.1);
 }
 
-.payment-legend .card-pay {
-  background: #767b83;
+.payment-legend button b {
+  color: #000c3d;
+  font-size: 13px;
 }
 
 .manager-table-panel,
@@ -2493,6 +2544,13 @@ body.theme-light .debt-preview {
   margin: 4px 0 0;
 }
 
+.email-card small {
+  color: #7b8290;
+  display: block;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
 .admin-graphs {
   margin-top: 24px;
 }
@@ -2652,7 +2710,8 @@ body.theme-light .debt-preview {
   }
 
   .manager-mid,
-  .manager-bottom {
+  .manager-bottom,
+  .dashboard-focus-panel {
     grid-template-columns: 1fr;
   }
 

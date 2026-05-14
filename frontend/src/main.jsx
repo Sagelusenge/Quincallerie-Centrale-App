@@ -495,7 +495,7 @@ function App() {
         <Page page={page} api={api} notify={notify} lang={lang} user={user} searchQuery={platformSearch} />
       </main>
       {showPasswordSettings && (
-        <PasswordSettings api={api} notify={notify} isSuperAdmin={isSuperAdmin} onClose={() => setShowPasswordSettings(false)} />
+        <PasswordSettings api={api} notify={notify} user={user} isSuperAdmin={isSuperAdmin} onClose={() => setShowPasswordSettings(false)} />
       )}
       {toast && <div className="toast">{toast}</div>}
     </div>
@@ -608,8 +608,8 @@ function Login({ onLogin, notify, toast }) {
   );
 }
 
-function PasswordSettings({ api, notify, isSuperAdmin, onClose }) {
-  const [form, setForm] = useState({ current_password: '', new_password: '', confirm_password: '' });
+function PasswordSettings({ api, notify, user, isSuperAdmin, onClose }) {
+  const [form, setForm] = useState({ new_password: '', confirm_password: '' });
 
   const save = async () => {
     if (form.new_password !== form.confirm_password) {
@@ -629,7 +629,10 @@ function PasswordSettings({ api, notify, isSuperAdmin, onClose }) {
   return (
     <Modal title="Reconfiguration du mot de passe" onClose={onClose}>
       <Form onSubmit={() => save().catch((error) => notify(error.message))}>
-        <Input label="Mot de passe actuel" type="password" value={form.current_password} onChange={(current_password) => setForm({ ...form, current_password })} required />
+        <div className="debt-preview">
+          <span>Identifiant</span>
+          <strong>{user?.email || 'Utilisateur connecte'}</strong>
+        </div>
         <Input label="Nouveau mot de passe" type="password" value={form.new_password} onChange={(new_password) => setForm({ ...form, new_password })} required />
         <Input label="Confirmer le mot de passe" type="password" value={form.confirm_password} onChange={(confirm_password) => setForm({ ...form, confirm_password })} required />
         <button className="btn modal-submit" type="submit"><LockKeyhole size={18} /> Mettre a jour</button>
@@ -664,12 +667,16 @@ function Page({ page, api, notify, lang, user, searchQuery }) {
         tasks.push(api('/dashboard/alertes-stock').then((r) => { next.extra.alertes = r.data || []; }).catch(() => {}));
         tasks.push(api('/dashboard/produits-plus-vendus').then((r) => { next.extra.produitsPlusVendus = r.data || []; }).catch(() => {}));
         tasks.push(api('/produits/mouvements-recents').then((r) => { next.extra.mouvementsStock = r.data || []; }).catch(() => {}));
+        tasks.push(api('/paiements/repartition').then((r) => { next.extra.repartitionPaiements = r.data || []; }).catch(() => {}));
         tasks.push(api('/rapports/top-acheteurs').then((r) => { next.extra.top = r.data || []; }).catch(() => {}));
       }
       if (page === 'produits') tasks.push(api('/produits/mouvements-recents').then((r) => { next.extra.mouvementsStock = r.data || []; }).catch(() => {}));
       if (page === 'paiements') tasks.push(api('/paiements/rapport-caisse').then((r) => { next.extra.caisse = r.data || []; }).catch(() => {}));
       if (page === 'utilisateurs') tasks.push(api('/utilisateurs').then((r) => { next.extra.utilisateurs = r.data || []; }));
-      if (page === 'mails') tasks.push(api('/mail/status').then((r) => { next.extra.mailStatus = r.data || {}; }).catch(() => {}));
+      if (page === 'mails') {
+        tasks.push(api('/mail/status').then((r) => { next.extra.mailStatus = r.data || {}; }).catch(() => {}));
+        tasks.push(api('/mail/messages').then((r) => { next.extra.mailMessages = r.data || []; }).catch(() => {}));
+      }
       if (page === 'rapports') {
         tasks.push(api('/rapports/factures').then((r) => { next.extra.factures = r.data || []; }));
         tasks.push(api('/rapports/creances').then((r) => { next.extra.creances = r.data || []; }));
@@ -725,6 +732,8 @@ function Page({ page, api, notify, lang, user, searchQuery }) {
 }
 
 function Dashboard({ data, searchQuery = '' }) {
+  const [dashboardFocus, setDashboardFocus] = useState('clients');
+  const [selectedPaymentMode, setSelectedPaymentMode] = useState('');
   const stats = data.extra.stats || {};
   const ventes = data.extra.ventesMensuelles || [];
   const alertes = data.extra.alertes || [];
@@ -737,6 +746,35 @@ function Dashboard({ data, searchQuery = '' }) {
   const devisAttente = (data.devis || []).filter((devis) => String(devis.statut || '').includes('attente')).length;
   const chartMonths = (ventes.length ? ventes.slice(0, 6) : ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin'].map((mois) => ({ mois, total: 0 })));
   const maxVente = Math.max(...chartMonths.map((v) => Number(v.total || 0)), 1);
+  const paymentRows = (data.extra.repartitionPaiements || []).map((row) => ({
+    mode: row.mode_paiement || row.Mode_Paiement || 'autre',
+    label: {
+      mobile_money: 'Mobile Money',
+      especes: 'Especes',
+      virement: 'Virement',
+      carte: 'Carte'
+    }[row.mode_paiement || row.Mode_Paiement] || (row.mode_paiement || row.Mode_Paiement || 'Autre'),
+    total: Number(row.total || row.Total_Encaisse || 0),
+    transactions: Number(row.transactions || row.Nombre_Transactions || 0)
+  }));
+  const paymentTotal = paymentRows.reduce((sum, row) => sum + row.total, 0);
+  const paymentPalette = ['#002761', '#9a6400', '#8fb0e8', '#747982', '#ffae2b'];
+  const donutParts = paymentRows.reduce((acc, row, index) => {
+    const start = acc.cursor;
+    const share = paymentTotal > 0 ? (row.total / paymentTotal) * 100 : 0;
+    return {
+      cursor: start + share,
+      segments: [...acc.segments, `${paymentPalette[index % paymentPalette.length]} ${start}% ${start + share}%`]
+    };
+  }, { cursor: 0, segments: [] }).segments;
+  const selectedPayment = paymentRows.find((row) => row.mode === selectedPaymentMode) || paymentRows[0];
+  const paymentPercent = paymentTotal > 0 && selectedPayment ? Math.round((selectedPayment.total / paymentTotal) * 100) : 0;
+  const focusContent = {
+    clients: { title: 'Clients suivis', value: stats.total_clients || data.clients.length || 0, detail: `${topClients.length} clients dans le top portefeuille` },
+    ca: { title: 'Chiffre d affaires', value: `USD ${Number(stats.ca_mois_en_cours || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`, detail: `${factures.length} factures visibles` },
+    devis: { title: 'Devis a traiter', value: devisAttente || 0, detail: 'Cliquez sur Devis pour convertir les attentes' },
+    stock: { title: 'Alertes stock', value: `${alertes.length || 0} produits`, detail: alertes.slice(0, 2).map((item) => item.nom).join(', ') || 'Aucune alerte critique' }
+  }[dashboardFocus];
   const invoiceStatus = (vente) => {
     const reste = Number(vente.reste_a_payer || 0);
     const total = Number(vente.montant_ttc || 0);
@@ -748,10 +786,17 @@ function Dashboard({ data, searchQuery = '' }) {
   return (
     <div className="manager-dashboard">
       <div className="grid cols-4 manager-kpis">
-        <KpiCard icon={Users} tone="blue" label="Total Clients" value={stats.total_clients || data.clients.length || 0} trend="+12 ce mois" />
-        <KpiCard icon={CreditCard} tone="orange" label="CA mois en cours" value={`USD ${Number(stats.ca_mois_en_cours || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} trend="+8%" />
-        <KpiCard icon={FileText} tone="pink" label="Devis en attente" value={devisAttente || 0} trend="A relancer" />
-        <KpiCard icon={AlertTriangle} tone="danger" label="Alertes stock" value={`${alertes.length || 0} produits`} trend="Urgent" negative />
+        <KpiCard icon={Users} tone="blue" label="Total Clients" value={stats.total_clients || data.clients.length || 0} trend="+12 ce mois" active={dashboardFocus === 'clients'} onClick={() => setDashboardFocus('clients')} />
+        <KpiCard icon={CreditCard} tone="orange" label="CA mois en cours" value={`USD ${Number(stats.ca_mois_en_cours || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} trend="+8%" active={dashboardFocus === 'ca'} onClick={() => setDashboardFocus('ca')} />
+        <KpiCard icon={FileText} tone="pink" label="Devis en attente" value={devisAttente || 0} trend="A relancer" active={dashboardFocus === 'devis'} onClick={() => setDashboardFocus('devis')} />
+        <KpiCard icon={AlertTriangle} tone="danger" label="Alertes stock" value={`${alertes.length || 0} produits`} trend="Urgent" negative active={dashboardFocus === 'stock'} onClick={() => setDashboardFocus('stock')} />
+      </div>
+
+      <div className="panel dashboard-focus-panel">
+        <span>Detail interactif</span>
+        <strong>{focusContent.title}</strong>
+        <b>{focusContent.value}</b>
+        <p>{focusContent.detail}</p>
       </div>
 
       <div className="grid manager-mid">
@@ -775,13 +820,13 @@ function Dashboard({ data, searchQuery = '' }) {
                 const value = Number(row.total || 0);
                 const height = value > 0 ? Math.max(24, (value / maxVente) * 210) : 8;
                 return (
-                  <div className="activity-month" key={month}>
+                  <button className="activity-month" key={month} type="button" onClick={() => setDashboardFocus('ca')} title={`Activite ${month}: ${money(value)}`}>
                     <strong>{value > 0 ? formatUsdCompact(value).replace('USD ', '') : '-'}</strong>
                     <div className="activity-track">
                       <i style={{ height }} />
                     </div>
                     <span>{month}</span>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -791,16 +836,23 @@ function Dashboard({ data, searchQuery = '' }) {
         <div className="panel payment-panel">
           <h3>Modes de paiement</h3>
           <div className="donut-wrap">
-            <div className="payment-donut">
-              <strong>72%</strong>
-              <span>DIGITAL</span>
+            <div
+              className="payment-donut"
+              style={{ background: `radial-gradient(circle closest-side, #fff 66%, transparent 67%), conic-gradient(${donutParts.length ? donutParts.join(', ') : '#e6e8ee 0% 100%'})` }}
+              title={selectedPayment ? `${selectedPayment.label}: ${money(selectedPayment.total)}` : 'Aucun paiement'}
+            >
+              <strong>{paymentPercent}%</strong>
+              <span>{selectedPayment?.label || 'AUCUN'}</span>
             </div>
           </div>
           <div className="payment-legend">
-            <span><i className="mobile" /> Mobile Money</span>
-            <span><i className="cash" /> Especes</span>
-            <span><i className="transfer" /> Virement</span>
-            <span><i className="card-pay" /> Carte</span>
+            {paymentRows.length ? paymentRows.map((row, index) => (
+              <button className={selectedPayment?.mode === row.mode ? 'active' : ''} key={row.mode} type="button" onClick={() => setSelectedPaymentMode(row.mode)}>
+                <i style={{ background: paymentPalette[index % paymentPalette.length] }} />
+                <span>{row.label}</span>
+                <b>{money(row.total)}</b>
+              </button>
+            )) : <span><i className="card-pay" /> Aucun paiement</span>}
           </div>
         </div>
       </div>
@@ -883,11 +935,12 @@ function Dashboard({ data, searchQuery = '' }) {
   );
 }
 
-function KpiCard({ icon: Icon, tone, label, value, trend, negative = false }) {
+function KpiCard({ icon: Icon, tone, label, value, trend, negative = false, active = false, onClick }) {
   const trendText = String(trend || '').replace('-', '');
   const trendPrefix = negative || trendText.startsWith('+') || trendText.includes('Total') || /[A-Za-z]/.test(trendText) ? '' : '+ ';
+  const Wrapper = onClick ? 'button' : 'div';
   return (
-    <div className="card kpi-card">
+    <Wrapper className={`card kpi-card ${active ? 'active' : ''}`} type={onClick ? 'button' : undefined} onClick={onClick}>
       <div className="kpi-top">
         <div className={`kpi-icon ${tone}`}>
           <Icon size={30} />
@@ -896,7 +949,7 @@ function KpiCard({ icon: Icon, tone, label, value, trend, negative = false }) {
       </div>
       <span>{label}</span>
       <strong>{value}</strong>
-    </div>
+    </Wrapper>
   );
 }
 
@@ -1579,33 +1632,38 @@ function Mails({ api, notify, data, submit, user, searchQuery = '' }) {
   const [creating, setCreating] = useState(false);
   const [query, setQuery] = useState('');
   const term = `${searchQuery} ${query}`.trim().toLowerCase();
-  const mailRows = [
-    { label: 'Expediteur connecte', value: user?.email || status.sender || 'Email utilisateur indisponible', status: 'actif' },
-    { label: 'Serveur SMTP', value: status.ready ? 'Configuration active' : 'Configuration requise', status: status.ready ? 'actif' : 'configuration requise' },
-    { label: 'Notifications automatiques', value: 'Bienvenue utilisateurs et managers', status: 'actif' }
-  ].filter((row) => `${row.label} ${row.value} ${row.status}`.toLowerCase().includes(term));
+  const messages = (data.extra.mailMessages || []).filter((row) => `${row.to_email || ''} ${row.sender_email || ''} ${row.subject || ''} ${row.status || ''}`.toLowerCase().includes(term));
 
   return (
     <div className="grid">
       <div className="panel">
         <div className="panel-heading client-toolbar">
-          <h3>Systeme email</h3>
+          <h3>Emails envoyes</h3>
           <div className="actions">
             <SearchInput value={query} onChange={setQuery} placeholder="Rechercher email" />
             <button className="btn small" type="button" onClick={() => setCreating(true)}><Plus size={16} /> Nouveau message</button>
           </div>
         </div>
         <div className="email-card-list">
-          {mailRows.map((row) => (
-            <article className="email-card" key={row.label}>
+          {messages.length ? messages.map((row) => (
+            <article className="email-card" key={row.id_mail}>
               <div className="category-icon"><Mail size={24} /></div>
               <div>
-                <strong>{row.label}</strong>
-                <p>{row.value}</p>
+                <strong>{row.subject}</strong>
+                <p>De {row.sender_email || user?.email || '-'} vers {row.to_email}</p>
+                <small>{formatDate(row.created_at)}</small>
               </div>
-              <Badge>{row.status}</Badge>
+              <Badge>{row.status || 'envoye'}</Badge>
             </article>
-          ))}
+          )) : <div className="empty large">Aucun email envoye</div>}
+        </div>
+      </div>
+      <div className="panel">
+        <h3>Configuration email</h3>
+        <div className="mail-status">
+          <Badge>{status.ready ? 'actif' : 'configuration requise'}</Badge>
+          <p>Expediteur courant: <strong>{user?.email || status.sender || 'Email utilisateur indisponible'}</strong></p>
+          <p>Les nouveaux utilisateurs et managers recoivent automatiquement un email de bienvenue avec leurs acces temporaires.</p>
         </div>
       </div>
       {creating && (

@@ -1,7 +1,8 @@
 import express from 'express';
 import { 
     createPaiement, 
-    getRapportCaisse 
+    getRapportCaisse,
+    getRepartitionPaiements
 } from '../controllers/paiementController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
@@ -18,6 +19,12 @@ router.get('/rapport-caisse',
     protect, 
     authorizeRoles('manager', 'caissier'), 
     getRapportCaisse
+);
+
+router.get('/repartition', 
+    protect, 
+    authorizeRoles('manager', 'caissier'), 
+    getRepartitionPaiements
 );
 
 export default router;

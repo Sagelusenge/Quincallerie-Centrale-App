@@ -26,6 +26,22 @@ export const ensureRuntimeSchema = async (pool) => {
         )
     `);
 
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS mail_messages (
+            id_mail INT AUTO_INCREMENT PRIMARY KEY,
+            entreprise_id VARCHAR(50),
+            user_id VARCHAR(50),
+            sender_email VARCHAR(160),
+            to_email VARCHAR(160) NOT NULL,
+            subject VARCHAR(255) NOT NULL,
+            message TEXT,
+            status VARCHAR(40) NOT NULL DEFAULT 'envoye',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_mail_entreprise (entreprise_id, created_at),
+            INDEX idx_mail_user (user_id, created_at)
+        )
+    `);
+
     const addColumnIfMissing = async (table, column, definition) => {
         const [rows] = await pool.query(
             `SELECT COLUMN_NAME
@@ -48,6 +64,15 @@ export const ensureRuntimeSchema = async (pool) => {
     await addColumnIfMissing('notifications', 'message', 'TEXT NULL');
     await addColumnIfMissing('notifications', 'lu', 'BOOLEAN DEFAULT FALSE');
     await addColumnIfMissing('notifications', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+
+    await addColumnIfMissing('mail_messages', 'entreprise_id', 'VARCHAR(50) NULL');
+    await addColumnIfMissing('mail_messages', 'user_id', 'VARCHAR(50) NULL');
+    await addColumnIfMissing('mail_messages', 'sender_email', 'VARCHAR(160) NULL');
+    await addColumnIfMissing('mail_messages', 'to_email', "VARCHAR(160) NOT NULL DEFAULT ''");
+    await addColumnIfMissing('mail_messages', 'subject', "VARCHAR(255) NOT NULL DEFAULT ''");
+    await addColumnIfMissing('mail_messages', 'message', 'TEXT NULL');
+    await addColumnIfMissing('mail_messages', 'status', 'VARCHAR(40) NOT NULL DEFAULT "envoye"');
+    await addColumnIfMissing('mail_messages', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
 
     const [productColumns] = await pool.query(`
         SELECT COLUMN_NAME

@@ -1,6 +1,6 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { getMailStatus, sendCustomMail } from '../controllers/mailController.js';
+import { getMailStatus, getMailMessages, sendCustomMail } from '../controllers/mailController.js';
 
 const router = express.Router();
 
@@ -29,6 +29,7 @@ const authorizeMailSender = (req, res, next) => {
 };
 
 router.get('/status', protectAny, getMailStatus);
+router.get('/messages', protectAny, authorizeMailSender, getMailMessages);
 router.post('/send', protectAny, authorizeMailSender, sendCustomMail);
 
 export default router;
