@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   ArrowRight,
@@ -430,7 +430,7 @@ function App() {
           {!isSuperAdmin && <div className="brand-mark">C</div>}
           <div>
             <strong>{sidebarTitle}</strong>
-            <span>{isSuperAdmin ? 'SME Solutions' : 'SME Solutions'}</span>
+            <span>PME Solutions</span>
           </div>
         </div>
         <nav className="nav">
@@ -504,10 +504,9 @@ function App() {
 
 function Login({ onLogin, notify, toast }) {
   const [form, setForm] = useState({ email: '', password: '' });
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [showForgot, setShowForgot] = useState(false);
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const passwordRef = useRef(null);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -518,22 +517,15 @@ function Login({ onLogin, notify, toast }) {
     }
   };
 
-  const forgot = async (event) => {
-    event.preventDefault();
-    try {
-      const response = await fetch(`${API_URL}/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: forgotEmail })
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body.message || 'Demande impossible');
-      notify(body.message);
-      setShowForgot(false);
-      setForgotEmail('');
-    } catch (error) {
-      notify(error.message);
-    }
+  const togglePassword = () => {
+    const input = passwordRef.current;
+    const start = input?.selectionStart ?? form.password.length;
+    const end = input?.selectionEnd ?? start;
+    setShowPassword((value) => !value);
+    window.requestAnimationFrame(() => {
+      passwordRef.current?.focus();
+      passwordRef.current?.setSelectionRange(start, end);
+    });
   };
 
   return (
@@ -558,8 +550,8 @@ function Login({ onLogin, notify, toast }) {
           </div>
         </div>
         <div className="login-hero-footer">
-          <span>SME SOLUTIONS</span>
-          <div><i className="active" /><i /><i /></div>
+          <span>PME SOLUTIONS</span>
+          <div className="login-hero-carousel"><i /><i /><i /></div>
         </div>
       </section>
       <section className="login-panel">
@@ -579,12 +571,11 @@ function Login({ onLogin, notify, toast }) {
               </span>
               <span className="input-shell">
                 <LockKeyhole size={22} />
-                <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Mot de passe" required />
-                <button className="password-eye" type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => setShowPassword((value) => !value)} title={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
+                <input ref={passwordRef} type={showPassword ? 'text' : 'password'} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Mot de passe" required />
+                <button className="password-eye" type="button" onMouseDown={(event) => event.preventDefault()} onClick={togglePassword} title={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
                   <Eye size={22} />
                 </button>
               </span>
-              <button className="forgot-inline" type="button" onClick={() => setShowForgot(!showForgot)}>Mot de passe oublie ?</button>
             </label>
             <label className="remember-row">
               <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
@@ -592,14 +583,6 @@ function Login({ onLogin, notify, toast }) {
             </label>
             <button className="btn login-submit">Se connecter <LogIn size={20} /></button>
           </form>
-          {showForgot && (
-            <form className="forgot-box" onSubmit={forgot}>
-              <label>Email de recuperation
-                <input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required />
-              </label>
-              <button className="btn secondary">Envoyer la demande</button>
-            </form>
-          )}
           <div className="login-card-footer">Copyright 2026 CRM PME</div>
         </div>
       </section>
@@ -1823,7 +1806,7 @@ function CompanyForm({ form, setForm, onSubmit, mode = 'create' }) {
             </button>
             <button className={`subscription-card ${form.plan === 'standard' ? 'selected' : ''}`} type="button" onClick={() => setForm({ ...form, plan: 'standard' })}>
               <span className="radio-dot" />
-              <strong>Standard SME</strong>
+              <strong>Standard PME</strong>
               <small>USD 149 / Mois - Jusqu'a 50 staff</small>
             </button>
           </div>
@@ -2043,7 +2026,7 @@ function SuperAdminAbonnements({ api, notify, data, submit, searchQuery = '' }) 
         </div>
         <Table headers={['Entreprise', 'Plan', 'Statut', 'Expiration', 'Reste', 'CA', 'Actions']} rows={entreprises.map((e) => [
           e.raison_sociale,
-          Number(e.nb_employes || 0) > 50 ? 'Enterprise Plus' : 'Standard SME',
+          Number(e.nb_employes || 0) > 50 ? 'Enterprise Plus' : 'Standard PME',
           <AdminCompanyStatus entreprise={e} />,
           formatDate(e.date_expiration_abonnement),
           `${e.jours_restants || 0} jours`,
