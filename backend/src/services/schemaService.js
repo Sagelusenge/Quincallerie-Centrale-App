@@ -87,4 +87,5 @@ export const ensureRuntimeSchema = async (pool) => {
     }
 
     await addColumnIfMissing('produits', 'photo_url', 'TEXT NULL');
+    await addColumnIfMissing('categorie_produit', 'photo_url', 'TEXT NULL');
 };

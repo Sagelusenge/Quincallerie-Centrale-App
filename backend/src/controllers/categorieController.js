@@ -19,7 +19,7 @@ export const getCategories = async (req, res) => {
 };
 
 export const createCategorie = async (req, res) => {
-    const { nom, description } = req.body;
+    const { nom, description, photo_url } = req.body;
     const entreprise_id = req.user.entreprise_id;
 
     if (!nom) {
@@ -30,12 +30,12 @@ export const createCategorie = async (req, res) => {
         const id_categorie = `CAT-${Date.now()}-${entreprise_id.slice(0, 8)}`;
 
         await pool.query(
-            `INSERT INTO categorie_produit (id_categorie, entreprise_id, nom, description)
-             VALUES (?, ?, ?, ?)`,
-            [id_categorie, entreprise_id, nom, description || null]
+            `INSERT INTO categorie_produit (id_categorie, entreprise_id, nom, description, photo_url)
+             VALUES (?, ?, ?, ?, ?)`,
+            [id_categorie, entreprise_id, nom, description || null, photo_url || null]
         );
 
-        res.status(201).json({ success: true, message: 'Categorie creee', data: { id_categorie, nom, description } });
+        res.status(201).json({ success: true, message: 'Categorie creee', data: { id_categorie, nom, description, photo_url } });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -43,7 +43,7 @@ export const createCategorie = async (req, res) => {
 
 export const updateCategorie = async (req, res) => {
     const { id } = req.params;
-    const { nom, description } = req.body;
+    const { nom, description, photo_url } = req.body;
 
     if (!nom) {
         return res.status(400).json({ success: false, message: 'Nom de categorie requis' });
@@ -51,9 +51,9 @@ export const updateCategorie = async (req, res) => {
 
     try {
         const [result] = await pool.query(
-            `UPDATE categorie_produit SET nom = ?, description = ?
+            `UPDATE categorie_produit SET nom = ?, description = ?, photo_url = ?
              WHERE id_categorie = ? AND entreprise_id = ?`,
-            [nom, description || null, id, req.user.entreprise_id]
+            [nom, description || null, photo_url || null, id, req.user.entreprise_id]
         );
 
         if (result.affectedRows === 0) {

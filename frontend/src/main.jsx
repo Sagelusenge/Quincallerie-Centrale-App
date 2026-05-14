@@ -1731,7 +1731,8 @@ function Mails({ api, notify, data, submit, user, searchQuery = '' }) {
 }
 
 function Categories({ api, notify, data, submit, searchQuery = '' }) {
-  const [form, setForm] = useState({ nom: '', description: '' });
+  const emptyCategoryForm = { nom: '', description: '', photo_url: '' };
+  const [form, setForm] = useState(emptyCategoryForm);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
   const [query, setQuery] = useState('');
@@ -1739,7 +1740,7 @@ function Categories({ api, notify, data, submit, searchQuery = '' }) {
   const categories = data.categories.filter((c) => `${c.nom} ${c.description || ''}`.toLowerCase().includes(term));
   const save = () => submit(async () => {
     await api('/categories', { method: 'POST', body: JSON.stringify(form) });
-    setForm({ nom: '', description: '' });
+    setForm(emptyCategoryForm);
     setCreating(false);
     notify('Categorie creee');
   });
@@ -1784,7 +1785,7 @@ function Categories({ api, notify, data, submit, searchQuery = '' }) {
                 <article className="category-rank-card" key={c.id_categorie}>
                   <b>#{index + 1}</b>
                   <div className="category-rank-visual">
-                    <img src={imageForIndex(index + 2)} alt="" />
+                    <img src={c.photo_url || imageForIndex(index + 2)} alt="" />
                   </div>
                   <strong>{c.nom}</strong>
                   <p>{c.description || 'Aucune description'}</p>
@@ -1801,6 +1802,7 @@ function Categories({ api, notify, data, submit, searchQuery = '' }) {
           <Form onSubmit={save}>
             <Input label="Nom" value={form.nom} onChange={(nom) => setForm({ ...form, nom })} required />
             <Input label="Description" value={form.description} onChange={(description) => setForm({ ...form, description })} />
+            <PhotoInput label="Photo de la categorie" value={form.photo_url} onChange={(photo_url) => setForm({ ...form, photo_url })} />
             <button className="btn modal-submit">Enregistrer <ArrowRight size={20} /></button>
           </Form>
         </Modal>
@@ -1810,6 +1812,7 @@ function Categories({ api, notify, data, submit, searchQuery = '' }) {
           <Form onSubmit={saveEdit}>
             <Input label="Nom" value={editing.nom || ''} onChange={(nom) => setEditing({ ...editing, nom })} required />
             <Input label="Description" value={editing.description || ''} onChange={(description) => setEditing({ ...editing, description })} />
+            <PhotoInput label="Photo de la categorie" value={editing.photo_url || ''} onChange={(photo_url) => setEditing({ ...editing, photo_url })} />
             <button className="btn">Mettre a jour</button>
           </Form>
         </Modal>
