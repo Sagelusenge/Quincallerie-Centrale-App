@@ -265,15 +265,37 @@ function App() {
   }, [token, page]);
 
   const login = async (payload) => {
-    const path = authType === 'super_admin' ? '/super-admin/login' : '/auth/login';
-    const result = await api(path, { method: 'POST', body: JSON.stringify(payload) });
+    const requestLogin = async (path) => {
+      const response = await fetch(`${API_URL}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.message || 'Identifiants incorrects');
+      return body;
+    };
+
+    let result;
+    let nextAuthType = 'user';
+    try {
+      result = await requestLogin('/auth/login');
+    } catch (userError) {
+      try {
+        result = await requestLogin('/super-admin/login');
+        nextAuthType = 'super_admin';
+      } catch (adminError) {
+        throw new Error(adminError.message || userError.message || 'Connexion impossible');
+      }
+    }
     const connectedUser = result.user || result.admin;
     setToken(result.token);
     setUser(connectedUser);
-    setPage(authType === 'super_admin' ? 'superadmin' : 'dashboard');
+    setAuthType(nextAuthType);
+    setPage(nextAuthType === 'super_admin' ? 'superadmin' : 'dashboard');
     localStorage.setItem('crm_token', result.token);
     localStorage.setItem('crm_user', JSON.stringify(connectedUser));
-    localStorage.setItem('crm_auth_type', authType);
+    localStorage.setItem('crm_auth_type', nextAuthType);
     notify('Connexion reussie');
   };
 
@@ -444,17 +466,12 @@ function App() {
   );
 }
 
-function Login({ authType, setAuthType, onLogin, notify, toast, lang }) {
-  const [form, setForm] = useState({ email: authType === 'super_admin' ? 'admin@crm-pme.local' : '', password: authType === 'super_admin' ? 'Admin@2026' : '' });
+function Login({ onLogin, notify, toast }) {
+  const [form, setForm] = useState({ email: '', password: '' });
   const [forgotEmail, setForgotEmail] = useState('');
   const [showForgot, setShowForgot] = useState(false);
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  useEffect(() => {
-    setForm({ email: authType === 'super_admin' ? 'admin@crm-pme.local' : '', password: authType === 'super_admin' ? 'Admin@2026' : '' });
-    localStorage.setItem('crm_auth_type', authType);
-  }, [authType]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -523,15 +540,15 @@ function Login({ authType, setAuthType, onLogin, notify, toast, lang }) {
             <label>
               <span className="login-label-row">
                 Mot de passe
-                {authType === 'user' && <button className="link-button" type="button" onClick={() => setShowForgot(!showForgot)}>Mot de passe oublie ?</button>}
               </span>
               <span className="input-shell">
                 <LockKeyhole size={22} />
-                <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="••••••••" required />
-                <button className="password-eye" type="button" onClick={() => setShowPassword(!showPassword)} title={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
+                <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Mot de passe" required />
+                <button className="password-eye" type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => setShowPassword((value) => !value)} title={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
                   <Eye size={22} />
                 </button>
               </span>
+              <button className="forgot-inline" type="button" onClick={() => setShowForgot(!showForgot)}>Mot de passe oublie ?</button>
             </label>
             <label className="remember-row">
               <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
@@ -539,7 +556,7 @@ function Login({ authType, setAuthType, onLogin, notify, toast, lang }) {
             </label>
             <button className="btn login-submit">Se connecter <LogIn size={20} /></button>
           </form>
-          {showForgot && authType === 'user' && (
+          {showForgot && (
             <form className="forgot-box" onSubmit={forgot}>
               <label>Email de recuperation
                 <input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required />
@@ -547,15 +564,8 @@ function Login({ authType, setAuthType, onLogin, notify, toast, lang }) {
               <button className="btn secondary">Envoyer la demande</button>
             </form>
           )}
-          <div className="login-role-block">
-            <span>Type d'acces</span>
-            <div className="role-pills">
-              <button type="button" className={authType === 'user' ? 'active' : ''} onClick={() => setAuthType('user')}>Entreprise</button>
-              <button type="button" className={authType === 'super_admin' ? 'active' : ''} onClick={() => setAuthType('super_admin')}>Administration</button>
-            </div>
-          </div>
+          <div className="login-card-footer">Copyright 2026 CRM PME</div>
         </div>
-        <footer className="login-footer">© 2026 CRM PME. Tous droits reserves. <a>Confidentialite</a> | <a>Aide</a></footer>
       </section>
       {toast && <div className="toast">{toast}</div>}
     </main>
