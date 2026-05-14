@@ -504,7 +504,6 @@ function App() {
 
 function Login({ onLogin, notify, toast }) {
   const [form, setForm] = useState({ email: '', password: '' });
-  const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const passwordRef = useRef(null);
 
@@ -551,7 +550,14 @@ function Login({ onLogin, notify, toast }) {
         </div>
         <div className="login-hero-footer">
           <span>PME SOLUTIONS</span>
-          <div className="login-hero-carousel"><i /><i /><i /></div>
+          <div className="login-photo-carousel" aria-hidden="true">
+            <div className="login-photo-track">
+              <img src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=420&q=80" alt="" />
+              <img src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=420&q=80" alt="" />
+              <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=420&q=80" alt="" />
+              <img src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=420&q=80" alt="" />
+            </div>
+          </div>
         </div>
       </section>
       <section className="login-panel">
@@ -576,10 +582,6 @@ function Login({ onLogin, notify, toast }) {
                   <Eye size={22} />
                 </button>
               </span>
-            </label>
-            <label className="remember-row">
-              <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-              Remember me
             </label>
             <button className="btn login-submit">Se connecter <LogIn size={20} /></button>
           </form>
