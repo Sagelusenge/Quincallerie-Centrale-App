@@ -18,7 +18,6 @@ import {
   FolderPlus,
   Gauge,
   Grid2X2,
-  HelpCircle,
   LockKeyhole,
   LogOut,
   LogIn,
@@ -258,6 +257,25 @@ function App() {
   }, [lang]);
 
   useEffect(() => {
+    if (!token || authType === 'super_admin') return;
+    let cancelled = false;
+    fetch(`${API_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then((response) => response.json().then((body) => ({ response, body })))
+      .then(({ response, body }) => {
+        if (!response.ok || !body.user || cancelled) return;
+        const refreshedUser = { ...body.user, id: body.user.id_utilisateur, type: 'utilisateur' };
+        setUser(refreshedUser);
+        localStorage.setItem('crm_user', JSON.stringify(refreshedUser));
+      })
+      .catch(() => null);
+    return () => {
+      cancelled = true;
+    };
+  }, [token, authType]);
+
+  useEffect(() => {
     if (!token) return;
     api('/notifications')
       .then((result) => setNotifications(result.data || []))
@@ -361,6 +379,7 @@ function App() {
   };
   const [title, subtitle] = titles[page] || ['CRM PME', ''];
   const isSuperAdmin = authType === 'super_admin';
+  const sidebarTitle = isSuperAdmin ? 'CRM PME' : (user?.entreprise_nom || user?.raison_sociale || user?.entreprise_id || 'CRM PME');
 
   return (
     <div className={`shell ${isSuperAdmin ? 'admin-shell' : ''}`}>
@@ -368,7 +387,7 @@ function App() {
         <div className="brand">
           {!isSuperAdmin && <div className="brand-mark">C</div>}
           <div>
-            <strong>CRM PME</strong>
+            <strong>{sidebarTitle}</strong>
             <span>{isSuperAdmin ? 'SME Solutions' : 'SME Solutions'}</span>
           </div>
         </div>
@@ -379,22 +398,11 @@ function App() {
               {item.label}
             </button>
           ))}
-        </nav>
-        <div className="sidebar-bottom">
-          {!isSuperAdmin && (
-            <button className="sidebar-create" type="button" onClick={() => setPage('devis')}>
-              Nouveau Dossier
-            </button>
-          )}
-          <button className="help-link" type="button">
-            <HelpCircle size={23} />
-            Aide
-          </button>
-          <button className="logout-link" onClick={logout}>
-            <LogOut size={25} />
+          <button className="nav-logout" type="button" onClick={logout}>
+            <LogOut size={23} />
             {tr(lang, 'logout')}
           </button>
-        </div>
+        </nav>
       </aside>
       <main className="main">
         <header className={`topbar ${isSuperAdmin ? 'admin-topbar' : ''}`}>
@@ -1004,12 +1012,7 @@ function Produits({ api, notify, data, submit, user }) {
   };
   return (
     <>
-      <div className="grid cols-2">
-        {canManageProducts && <CreateLauncher title="Nouveau produit" description="Ajouter un article ou service au catalogue." buttonLabel="Ajouter produit" onClick={() => setCreating(true)} />}
-        {canManageProducts && <CreateLauncher title="Approvisionnement" description="Modifier le stock depuis une action controlee." buttonLabel="Mettre a jour stock" onClick={() => setStocking(true)} />}
-        {!canManageProducts && <div className="notice">Votre role permet de consulter les produits, sans ajout ni modification.</div>}
-      </div>
-      <div className="panel" style={{ marginTop: 16 }}>
+      <div className="panel">
         <div className="panel-heading product-toolbar">
           <h3>Catalogue</h3>
           <div className="actions">
@@ -1020,8 +1023,11 @@ function Produits({ api, notify, data, submit, user }) {
               <option value="ALERTE">Alerte</option>
               <option value="RUPTURE">Rupture</option>
             </select>
+            {canManageProducts && <button className="btn small" type="button" onClick={() => setCreating(true)}><Plus size={16} /> Ajouter produit</button>}
+            {canManageProducts && <button className="btn secondary small" type="button" onClick={() => setStocking(true)}><Package size={16} /> Mouvement stock</button>}
           </div>
         </div>
+        {!canManageProducts && <div className="notice">Votre role permet de consulter les produits, sans ajout ni modification.</div>}
         <div className="product-card-grid">
           {produits.map((p) => (
             <article className="product-card" key={p.id_produit}>
@@ -1520,16 +1526,28 @@ function Categories({ api, notify, data, submit }) {
   };
 
   return (
-    <div className="grid cols-2">
-      <CreateLauncher title="Nouvelle categorie" description="Classer les produits et services." buttonLabel="Ajouter categorie" onClick={() => setCreating(true)} />
+    <div className="grid">
       <div className="panel">
-        <div className="panel-heading"><h3>Categories</h3><SearchInput value={query} onChange={setQuery} placeholder="Rechercher categorie" /></div>
-        <Table headers={['Nom', 'Description', 'Produits', 'Actions']} rows={categories.map((c) => [
-          c.nom,
-          c.description || '-',
-          c.total_produits || 0,
-          <RowActions onEdit={() => setEditing(c)} onDelete={() => remove(c)} />
-        ])} />
+        <div className="panel-heading client-toolbar">
+          <h3>Categories</h3>
+          <div className="actions">
+            <SearchInput value={query} onChange={setQuery} placeholder="Rechercher categorie" />
+            <button className="btn small" type="button" onClick={() => setCreating(true)}><Plus size={16} /> Nouvelle categorie</button>
+          </div>
+        </div>
+        <div className="category-list">
+          {categories.map((c) => (
+            <article className="category-card" key={c.id_categorie}>
+              <div className="category-icon"><Tags size={24} /></div>
+              <div>
+                <strong>{c.nom}</strong>
+                <p>{c.description || 'Aucune description'}</p>
+              </div>
+              <span>{c.total_produits || 0} produits</span>
+              <RowActions onEdit={() => setEditing(c)} onDelete={() => remove(c)} />
+            </article>
+          ))}
+        </div>
       </div>
       {creating && (
         <Modal title="Nouvelle categorie" onClose={() => setCreating(false)}>

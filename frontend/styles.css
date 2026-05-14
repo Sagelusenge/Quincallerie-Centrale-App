@@ -66,6 +66,7 @@ button {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  min-height: 100vh;
   padding: 24px 16px;
   position: sticky;
   top: 0;
@@ -97,6 +98,10 @@ button {
   font-size: 21px;
   font-weight: 900;
   line-height: 1;
+  max-width: 230px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .brand span {
@@ -138,44 +143,17 @@ button {
   color: #fff;
 }
 
-.logout-link {
+.nav-logout {
   align-items: center;
   background: transparent;
-  border-top: 1px solid var(--line);
-  color: #aab6c8;
+  border-left: 5px solid transparent;
+  color: #ff3b3b;
   display: flex;
   gap: 12px;
-  font-size: 19px;
-  font-weight: 900;
-  margin-top: auto;
-  padding: 18px 14px 0;
+  min-height: 56px;
+  padding: 15px 30px;
   text-align: left;
-}
-
-.sidebar-bottom {
-  border-top: 1px solid var(--line);
-  display: grid;
-  gap: 4px;
-  margin-top: auto;
-  padding-top: 14px;
-}
-
-.help-link {
-  align-items: center;
-  background: transparent;
-  color: #aab6c8;
-  display: flex;
-  gap: 12px;
-  font-size: 16px;
-  font-weight: 800;
-  padding: 10px 14px;
-  text-align: left;
-}
-
-.sidebar-bottom .logout-link {
-  border-top: 0;
-  margin-top: 0;
-  padding-top: 10px;
+  width: 100%;
 }
 
 .main {
@@ -1499,17 +1477,6 @@ body.theme-light .debt-preview {
   color: #ffa51f;
 }
 
-.admin-shell .help-link {
-  color: #c3ccdd;
-  padding-left: 30px;
-}
-
-.admin-shell .logout-link {
-  color: #ff3b3b;
-  font-size: 16px;
-  padding-left: 30px;
-}
-
 .admin-shell .main {
   background: #f7f7fb;
   padding: 0 30px 34px;
@@ -1787,17 +1754,6 @@ body.theme-light .debt-preview {
   margin: -8px 0 8px;
 }
 
-.sidebar-create {
-  background: #ffae2b;
-  border-radius: 5px;
-  color: #002761;
-  font-size: 20px;
-  font-weight: 900;
-  margin: 8px 20px 18px;
-  min-height: 56px;
-  padding: 12px 18px;
-}
-
 /* Theme unifie CRM PME pour tous les espaces */
 .shell {
   background: #f7f7fb;
@@ -1860,10 +1816,18 @@ body.theme-light .debt-preview {
   color: #ffa51f;
 }
 
-.shell:not(.admin-shell) .logout-link {
+.shell:not(.admin-shell) .nav-logout,
+.admin-shell .nav-logout {
+  border-left: 5px solid transparent;
   color: #ff3b3b;
   font-size: 16px;
+  font-weight: 800;
   padding-left: 30px;
+}
+
+.shell:not(.admin-shell) .nav-logout:hover,
+.admin-shell .nav-logout:hover {
+  background: rgba(255, 59, 59, 0.08);
 }
 
 .shell:not(.admin-shell) .main {
@@ -2352,8 +2316,8 @@ body.theme-light .debt-preview {
 
 .product-card-grid {
   display: grid;
-  gap: 18px;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 }
 
 .product-card {
@@ -2361,9 +2325,15 @@ body.theme-light .debt-preview {
   border: 1px solid #c5cad6;
   border-radius: 8px;
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
-  min-height: 156px;
+  grid-template-columns: 112px minmax(0, 1fr);
+  min-height: 178px;
   overflow: hidden;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.product-card:hover {
+  border-color: #002761;
+  transform: translateY(-2px);
 }
 
 .product-photo {
@@ -2373,7 +2343,7 @@ body.theme-light .debt-preview {
     #e9eef6;
   color: #fff;
   display: grid;
-  font-size: 36px;
+  font-size: 42px;
   font-weight: 900;
   justify-items: center;
 }
@@ -2381,7 +2351,7 @@ body.theme-light .debt-preview {
 .product-card-body {
   display: grid;
   gap: 12px;
-  padding: 16px;
+  padding: 18px;
 }
 
 .product-card-title {
@@ -2393,7 +2363,7 @@ body.theme-light .debt-preview {
 
 .product-card-title strong {
   color: #000c3d;
-  font-size: 18px;
+  font-size: 20px;
 }
 
 .product-card p {
@@ -2428,6 +2398,56 @@ body.theme-light .debt-preview {
   gap: 14px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-bottom: 16px;
+}
+
+.category-list {
+  display: grid;
+  gap: 14px;
+}
+
+.category-card {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #c5cad6;
+  border-radius: 8px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 54px minmax(0, 1fr) auto auto;
+  min-height: 92px;
+  padding: 16px 18px;
+}
+
+.category-icon {
+  align-items: center;
+  background: #edf1f6;
+  border-radius: 8px;
+  color: #002761;
+  display: grid;
+  height: 50px;
+  justify-items: center;
+  width: 50px;
+}
+
+.category-card strong {
+  color: #000c3d;
+  display: block;
+  font-size: 18px;
+}
+
+.category-card p {
+  color: #5f6574;
+  line-height: 1.35;
+  margin: 4px 0 0;
+}
+
+.category-card > span {
+  background: #f1f4f8;
+  border-radius: 999px;
+  color: #263142;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 8px 12px;
+  white-space: nowrap;
 }
 
 .admin-graphs {
@@ -2566,16 +2586,13 @@ body.theme-light .debt-preview {
   }
 
   .sidebar {
-    height: auto;
+    height: 100vh;
+    min-height: 100vh;
     position: static;
   }
 
   .nav {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .logout-link {
-    margin-top: 20px;
   }
 
   .toolbar {
@@ -2729,6 +2746,19 @@ body.theme-light .debt-preview {
 
   .top-client-list article {
     grid-template-columns: 52px 1fr;
+  }
+
+  .product-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .product-card,
+  .category-card {
+    grid-template-columns: 1fr;
+  }
+
+  .category-card > span {
+    justify-self: start;
   }
 
   .client-spend,

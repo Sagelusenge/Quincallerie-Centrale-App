@@ -35,7 +35,10 @@ export const login = async (req, res) => {
 
     try {
         const [users] = await pool.query(
-            'SELECT * FROM utilisateur WHERE email = ? AND actif = 1',
+            `SELECT u.*, e.raison_sociale AS entreprise_nom
+             FROM utilisateur u
+             JOIN entreprise e ON e.id_entreprise = u.entreprise_id
+             WHERE u.email = ? AND u.actif = 1`,
             [email]
         );
 
@@ -95,6 +98,7 @@ export const login = async (req, res) => {
                 email:         user.email,
                 role:          user.role,
                 entreprise_id: user.entreprise_id,
+                entreprise_nom: user.entreprise_nom,
                 type:          'utilisateur'
             }
         });
