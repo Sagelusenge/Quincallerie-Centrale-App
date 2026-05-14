@@ -244,8 +244,9 @@ function getPrintIdentity() {
   }
 }
 
-function printLayout({ title, badge, sections = [], table, note }) {
-  const win = window.open('', '_blank', 'width=430,height=700');
+function printLayout({ title, badge, sections = [], table, note, paper = 'ticket' }) {
+  const isTicket = paper === 'ticket';
+  const win = window.open('', '_blank', isTicket ? 'width=430,height=700' : 'width=1000,height=760');
   if (!win) return;
   const identity = getPrintIdentity();
   const date = new Date().toLocaleDateString('fr-FR');
@@ -300,34 +301,44 @@ function printLayout({ title, badge, sections = [], table, note }) {
           .signature span{display:block;font-size:13px;line-height:1.8}
           footer{border-top:1px solid #c9d2df;color:#475569;font-size:12px;margin-top:42px;padding-top:10px;text-align:center}
           @media print{
-            @page{size:80mm auto;margin:4mm}
-            body{padding:0;width:72mm}
-            .page{max-width:72mm;width:72mm}
-            .print-head{display:block;margin-bottom:10px;padding-bottom:8px}
-            .brand{gap:6px}
-            .print-logo{border-radius:5px;font-size:15px;height:28px;width:28px}
-            h1{font-size:17px;line-height:1.2;word-break:break-word}
-            .company{font-size:10px;line-height:1.4;margin-top:6px}
-            .doc-title{font-size:14px;margin-top:8px;text-align:left}
-            .badge{background:#fff0cc!important;font-size:10px;margin-top:6px;padding:5px 8px}
-            .info-grid{display:block;margin-bottom:8px}
-            .info-card,.details{break-inside:avoid;border-radius:5px;margin-bottom:8px;padding:8px}
-            h2{font-size:11px;margin-bottom:7px}
-            .info-row{display:grid;font-size:10px;gap:3px;grid-template-columns:25mm 1fr;line-height:1.35}
-            table,thead,tbody,tr,td{display:block;width:100%}
-            thead{display:none}
-            tr{border:1px solid #c9d2df;border-radius:4px;margin-bottom:6px;padding:4px}
-            td{border:0;display:grid;font-size:10px;grid-template-columns:25mm 1fr;line-height:1.25;padding:3px 0;word-break:break-word}
-            td::before{color:#002761;content:attr(data-label);font-weight:800;padding-right:4px}
-            .note{font-size:9px;line-height:1.35;margin-top:8px}
-            .signatures{display:block;margin-top:14px}
-            .signature{margin-top:20px;padding-top:7px}
-            .signature strong,.signature span{font-size:10px;line-height:1.5}
-            footer{font-size:9px;line-height:1.3;margin-top:18px;padding-top:8px}
+            ${isTicket ? `
+              @page{size:80mm auto;margin:4mm}
+              body{padding:0;width:72mm}
+              .page{max-width:72mm;width:72mm}
+              .print-head{display:block;margin-bottom:10px;padding-bottom:8px}
+              .brand{gap:6px}
+              .print-logo{border-radius:5px;font-size:15px;height:28px;width:28px}
+              h1{font-size:17px;line-height:1.2;word-break:break-word}
+              .company{font-size:10px;line-height:1.4;margin-top:6px}
+              .doc-title{font-size:14px;margin-top:8px;text-align:left}
+              .badge{background:#fff0cc!important;font-size:10px;margin-top:6px;padding:5px 8px}
+              .info-grid{display:block;margin-bottom:8px}
+              .info-card,.details{break-inside:avoid;border-radius:5px;margin-bottom:8px;padding:8px}
+              h2{font-size:11px;margin-bottom:7px}
+              .info-row{display:grid;font-size:10px;gap:3px;grid-template-columns:25mm 1fr;line-height:1.35}
+              table,thead,tbody,tr,td{display:block;width:100%}
+              thead{display:none}
+              tr{border:1px solid #c9d2df;border-radius:4px;margin-bottom:6px;padding:4px}
+              td{border:0;display:grid;font-size:10px;grid-template-columns:25mm 1fr;line-height:1.25;padding:3px 0;word-break:break-word}
+              td::before{color:#002761;content:attr(data-label);font-weight:800;padding-right:4px}
+              .note{font-size:9px;line-height:1.35;margin-top:8px}
+              .signatures{display:block;margin-top:14px}
+              .signature{margin-top:20px;padding-top:7px}
+              .signature strong,.signature span{font-size:10px;line-height:1.5}
+              footer{font-size:9px;line-height:1.3;margin-top:18px;padding-top:8px}
+            ` : `
+              @page{size:A4 portrait;margin:12mm}
+              body{padding:0}
+              .page{max-width:none;width:100%}
+              .info-card,.details{break-inside:avoid}
+              table{page-break-inside:auto}
+              tr{break-inside:avoid}
+              th,td{font-size:12px;padding:7px}
+            `}
           }
         </style>
       </head>
-      <body>
+      <body class="${isTicket ? 'ticket-paper' : 'page-paper'}">
         <main class="page">
           <header class="print-head">
             <div>
@@ -355,7 +366,7 @@ function printLayout({ title, badge, sections = [], table, note }) {
   win.print();
 }
 
-function printDocument(title, rows) {
+function printDocument(title, rows, options = {}) {
   const badgeRow = rows.find(([label]) => ['Facture', 'Numero', 'Entreprise'].includes(label));
   printLayout({
     title,
@@ -365,7 +376,8 @@ function printDocument(title, rows) {
       { title: 'Controle', rows: [['Date', new Date().toLocaleDateString('fr-FR')], ['Document', title], ['Statut', 'Valide']] }
     ],
     table: { title: 'Details', headers: ['Element', 'Valeur'], rows },
-    note: 'Ce document est genere automatiquement depuis CRM PME.'
+    note: 'Ce document est genere automatiquement depuis CRM PME.',
+    paper: options.paper || 'ticket'
   });
 }
 
@@ -378,7 +390,8 @@ function printTableDocument(title, headers, rows, options = {}) {
       { title: 'Source', rows: [['Application', 'CRM PME'], ['Etat', title], ['Devise', 'USD']] }
     ],
     table: { title: options.tableTitle || 'Details commerciaux', headers, rows },
-    note: options.note || 'Cet etat de sortie est transmis par CRM PME pour consultation et archivage.'
+    note: options.note || 'Cet etat de sortie est transmis par CRM PME pour consultation et archivage.',
+    paper: options.paper || 'page'
   });
 }
 
@@ -1209,7 +1222,7 @@ function Clients({ api, notify, data, submit, searchQuery = '' }) {
           money(c.ca_total),
           <RowActions
             onEdit={() => setEditing(c)}
-            onPrint={() => printDocument('Fiche client', [['Nom', `${c.nom} ${c.postnom || ''}`], ['Telephone', c.telephone || '-'], ['Achats', c.nombre_achats || 0], ['CA', money(c.ca_total)]])}
+            onPrint={() => printDocument('Fiche client', [['Nom', `${c.nom} ${c.postnom || ''}`], ['Telephone', c.telephone || '-'], ['Achats', c.nombre_achats || 0], ['CA', money(c.ca_total)]], { paper: 'page' })}
             onToggle={() => showHistory(c)}
             toggleLabel="Historique"
             onDelete={() => remove(c)}
@@ -1328,7 +1341,7 @@ function Produits({ api, notify, data, submit, user, searchQuery = '' }) {
                   </div>
                   <div className="actions">
                     {canManageProducts && <button className="action edit" type="button" title="Modifier" onClick={() => setEditing(p)}><Edit3 size={17} /></button>}
-                    <button className="action print-action" type="button" title="Imprimer" onClick={() => printDocument('Fiche produit', [['Reference', p.reference_produit], ['Produit', p.nom], ['Prix HT', money(p.prix_ht)], ['Stock', p.quantite_stock], ['Statut', p.statut_stock]])}><Printer size={17} /></button>
+                    <button className="action print-action" type="button" title="Imprimer" onClick={() => printDocument('Fiche stock produit', [['Reference', p.reference_produit], ['Produit', p.nom], ['Prix HT', money(p.prix_ht)], ['Stock', p.quantite_stock], ['Statut', p.statut_stock]], { paper: 'page' })}><Printer size={17} /></button>
                     {user?.role === 'manager' && <button className="action delete" type="button" title="Supprimer" onClick={() => remove(p)}><Trash2 size={17} /></button>}
                   </div>
                 </article>
@@ -1702,8 +1715,20 @@ function Rapports({ data, searchQuery = '' }) {
       <div className="panel"><div className="panel-heading"><h3>Creances</h3><button className="btn print" onClick={() => printRows(`Creances - ${period}`, ['Facture', 'Client', 'Du', 'Paye', 'Reste'], creances.map((r) => [r.numero_facture, r.client_nom, money(r.montant_du), money(r.montant_paye), money(r.reste_a_payer)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Facture', 'Client', 'Du', 'Paye', 'Reste']} rows={creances.map((r) => [r.numero_facture, r.client_nom, money(r.montant_du), money(r.montant_paye), money(r.reste_a_payer)])} /></div>
       <div className="panel"><div className="panel-heading"><h3>Factures</h3><button className="btn print" onClick={() => printRows('Factures', ['Facture', 'Client', 'Montant', 'Reste'], factures.map((r) => [r.numero_facture, `${r.client_nom} ${r.client_postnom || ''}`, money(r.montant_ttc), money(r.reste_a_payer)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Facture', 'Client', 'Montant', 'Reste']} rows={factures.map((r) => [r.numero_facture, `${r.client_nom} ${r.client_postnom || ''}`, money(r.montant_ttc), money(r.reste_a_payer)])} /></div>
       <div className="grid cols-2">
-        <div className="panel"><h3>Inventaire</h3><Table headers={['Produit', 'Stock', 'Valeur', 'Statut']} rows={stock.map((r) => [r.nom, r.quantite_stock, money(r.valeur_stock_ht), <Badge>{r.statut}</Badge>])} /></div>
-        <div className="panel"><h3>Top clients</h3><Table headers={['Client', 'Achats', 'CA']} rows={top.map((r) => [`${r.nom} ${r.postnom || ''}`, r.nombre_achats, money(r.ca_total)])} /></div>
+        <div className="panel">
+          <div className="panel-heading">
+            <h3>Inventaire</h3>
+            <button className="btn print" onClick={() => printRows(`Fiche de stock - ${period}`, ['Produit', 'Stock', 'Valeur', 'Statut'], stock.map((r) => [r.nom, r.quantite_stock, money(r.valeur_stock_ht), r.statut]))}><Printer size={18} /> Imprimer</button>
+          </div>
+          <Table headers={['Produit', 'Stock', 'Valeur', 'Statut']} rows={stock.map((r) => [r.nom, r.quantite_stock, money(r.valeur_stock_ht), <Badge>{r.statut}</Badge>])} />
+        </div>
+        <div className="panel">
+          <div className="panel-heading">
+            <h3>Top clients</h3>
+            <button className="btn print" onClick={() => printRows(`Top clients - ${period}`, ['Client', 'Achats', 'CA'], top.map((r) => [`${r.nom} ${r.postnom || ''}`, r.nombre_achats, money(r.ca_total)]))}><Printer size={18} /> Imprimer</button>
+          </div>
+          <Table headers={['Client', 'Achats', 'CA']} rows={top.map((r) => [`${r.nom} ${r.postnom || ''}`, r.nombre_achats, money(r.ca_total)])} />
+        </div>
       </div>
     </div>
   );
@@ -1758,7 +1783,7 @@ function Utilisateurs({ api, notify, data, submit, searchQuery = '' }) {
           <Badge>{u.actif ? 'actif' : 'suspendu'}</Badge>,
           <RowActions
             onEdit={() => setEditing({ ...u, mot_de_passe: '' })}
-            onPrint={() => printDocument('Utilisateur', [['Nom', u.nom], ['Email', u.email], ['Role', u.role], ['Statut', u.actif ? 'actif' : 'suspendu']])}
+            onPrint={() => printDocument('Utilisateur', [['Nom', u.nom], ['Email', u.email], ['Role', u.role], ['Statut', u.actif ? 'actif' : 'suspendu']], { paper: 'page' })}
             onToggle={() => setHistoryUser(u)}
             toggleLabel="Vision et historique"
             onDelete={() => remove(u)}
@@ -2189,7 +2214,7 @@ function SuperAdminEntreprises({ api, notify, data, submit, searchQuery = '' }) 
           formatUsd(e.ca_total),
           <RowActions
             onEdit={() => setEditing(e)}
-            onPrint={() => printDocument('Entreprise', [['Entreprise', e.raison_sociale], ['Ville', e.ville || '-'], ['Statut', e.statut_abonnement], ['Employes', e.nb_employes], ['CA', money(e.ca_total)]])}
+            onPrint={() => printDocument('Entreprise', [['Entreprise', e.raison_sociale], ['Ville', e.ville || '-'], ['Statut', e.statut_abonnement], ['Employes', e.nb_employes], ['CA', money(e.ca_total)]], { paper: 'page' })}
             onToggle={() => toggleSubscription(e)}
             toggleLabel={e.statut_abonnement === 'actif' ? 'Suspendre' : 'Activer'}
             onDelete={() => remove(e)}
@@ -2271,7 +2296,7 @@ function SuperAdminRapports({ data, searchQuery = '' }) {
     ['Suspendues', stats.entreprises_suspendues || 0],
     ['Transactions', stats.total_ventes || 0],
     ['CA global', money(stats.ca_global)]
-  ]);
+  ], { paper: 'page' });
   return (
     <div className="grid">
       <div className="grid cols-4">
