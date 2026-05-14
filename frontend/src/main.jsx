@@ -234,22 +234,24 @@ function escapePrint(value) {
 function getPrintIdentity() {
   try {
     const user = JSON.parse(localStorage.getItem('crm_user') || 'null');
+    const userLabel = user?.nom || user?.email || 'utilisateur';
     return {
       company: user?.entreprise_nom || user?.raison_sociale || 'CRM PME',
-      subtitle: user?.role ? `Espace ${user.role}` : 'Gestion commerciale',
+      userLabel,
       contact: user?.email || ''
     };
   } catch {
-    return { company: 'CRM PME', subtitle: 'Gestion commerciale', contact: '' };
+    return { company: 'CRM PME', userLabel: 'utilisateur', contact: '' };
   }
 }
 
-function printLayout({ title, badge, sections = [], table, note, paper = 'ticket' }) {
+function printLayout({ title, badge, sections = [], table, note, paper = 'ticket', generatedLine, showSignatures = false }) {
   const isTicket = paper === 'ticket';
   const win = window.open('', '_blank', isTicket ? 'width=430,height=700' : 'width=1000,height=760');
   if (!win) return;
   const identity = getPrintIdentity();
   const date = new Date().toLocaleDateString('fr-FR');
+  const line = generatedLine || `Document genere par ${identity.userLabel}`;
   const sectionHtml = sections.map((section) => `
     <section class="info-card">
       <h2>${escapePrint(section.title)}</h2>
@@ -343,7 +345,7 @@ function printLayout({ title, badge, sections = [], table, note, paper = 'ticket
           <header class="print-head">
             <div>
               <div class="brand"><div class="print-logo">C</div><h1>${escapePrint(identity.company)}</h1></div>
-              <div class="company">${escapePrint(identity.subtitle)}<br>${escapePrint(identity.contact || 'Document genere par CRM PME')}</div>
+              <div class="company">${escapePrint(line)}<br>${escapePrint(identity.contact || 'CRM PME')}</div>
             </div>
             <div>
               <div class="doc-title">${escapePrint(title)}</div>
@@ -352,10 +354,12 @@ function printLayout({ title, badge, sections = [], table, note, paper = 'ticket
           </header>
           <div class="info-grid">${sectionHtml}</div>
           ${tableHtml}
-          <div class="signatures">
-            <div class="signature"><strong>Pour ${escapePrint(identity.company)}</strong><span>Nom : ........................................</span><span>Date : .... / .... / 2026</span></div>
-            <div class="signature"><strong>Pour le demandeur</strong><span>Nom : ........................................</span><span>Date : .... / .... / 2026</span></div>
-          </div>
+          ${showSignatures ? `
+            <div class="signatures">
+              <div class="signature"><strong>Pour ${escapePrint(identity.company)}</strong><span>Nom : ........................................</span><span>Date : .... / .... / 2026</span></div>
+              <div class="signature"><strong>Pour le demandeur</strong><span>Nom : ........................................</span><span>Date : .... / .... / 2026</span></div>
+            </div>
+          ` : ''}
           <footer>${escapePrint(identity.company)} - Etat imprime depuis CRM PME</footer>
         </main>
       </body>
@@ -368,6 +372,12 @@ function printLayout({ title, badge, sections = [], table, note, paper = 'ticket
 
 function printDocument(title, rows, options = {}) {
   const badgeRow = rows.find(([label]) => ['Facture', 'Numero', 'Entreprise'].includes(label));
+  const identity = getPrintIdentity();
+  const lowerTitle = title.toLowerCase();
+  const generatedLine = options.generatedLine
+    || (lowerTitle.includes('facture') ? `Facture generee par ${identity.userLabel}`
+      : lowerTitle.includes('devis') ? `Devis genere par ${identity.userLabel}`
+        : `Document genere par ${identity.userLabel}`);
   printLayout({
     title,
     badge: badgeRow?.[1],
@@ -377,7 +387,9 @@ function printDocument(title, rows, options = {}) {
     ],
     table: { title: 'Details', headers: ['Element', 'Valeur'], rows },
     note: 'Ce document est genere automatiquement depuis CRM PME.',
-    paper: options.paper || 'ticket'
+    paper: options.paper || 'ticket',
+    generatedLine,
+    showSignatures: Boolean(options.showSignatures)
   });
 }
 
@@ -391,7 +403,9 @@ function printTableDocument(title, headers, rows, options = {}) {
     ],
     table: { title: options.tableTitle || 'Details commerciaux', headers, rows },
     note: options.note || 'Cet etat de sortie est transmis par CRM PME pour consultation et archivage.',
-    paper: options.paper || 'page'
+    paper: options.paper || 'page',
+    generatedLine: options.generatedLine,
+    showSignatures: Boolean(options.showSignatures)
   });
 }
 
@@ -1678,18 +1692,58 @@ function Paiements({ api, notify, data, submit, searchQuery = '' }) {
   );
 }
 
+function periodLabel(period) {
+  return {
+    journalier: 'Journalier',
+    hebdomadaire: 'Hebdomadaire',
+    mensuel: 'Mensuel',
+    annuel: 'Annuel'
+  }[period] || 'Actuelle';
+}
+
+function getPeriodStart(period) {
+  const now = new Date();
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  if (period === 'hebdomadaire') {
+    const day = start.getDay() || 7;
+    start.setDate(start.getDate() - day + 1);
+  }
+  if (period === 'mensuel') {
+    start.setDate(1);
+  }
+  if (period === 'annuel') {
+    start.setMonth(0, 1);
+  }
+  return start;
+}
+
+function filterRowsByPeriod(rows, period, dateKeys = ['date_vente']) {
+  const start = getPeriodStart(period);
+  const end = new Date();
+  return rows.filter((row) => {
+    const rawDate = dateKeys.map((key) => row[key]).find(Boolean);
+    if (!rawDate) return false;
+    const date = new Date(rawDate);
+    return !Number.isNaN(date.getTime()) && date >= start && date <= end;
+  });
+}
+
 function Rapports({ data, searchQuery = '' }) {
   const source = data.extra;
   const term = searchQuery.trim().toLowerCase();
-  const factures = (source.factures || []).filter((r) => !term || `${r.numero_facture} ${r.client_nom || ''} ${r.client_postnom || ''}`.toLowerCase().includes(term));
-  const creances = (source.creances || []).filter((r) => !term || `${r.numero_facture} ${r.client_nom || ''}`.toLowerCase().includes(term));
-  const stock = (source.stock || []).filter((r) => !term || `${r.nom} ${r.statut || ''}`.toLowerCase().includes(term));
-  const top = (source.top || []).filter((r) => !term || `${r.nom} ${r.postnom || ''}`.toLowerCase().includes(term));
   const [period, setPeriod] = useState('journalier');
+  const factures = filterRowsByPeriod(source.factures || [], period)
+    .filter((r) => !term || `${r.numero_facture} ${r.client_nom || ''} ${r.client_postnom || ''}`.toLowerCase().includes(term));
+  const creances = filterRowsByPeriod(source.creances || [], period)
+    .filter((r) => !term || `${r.numero_facture} ${r.client_nom || ''}`.toLowerCase().includes(term));
+  const stock = (source.stock || []).filter((r) => !term || `${r.nom} ${r.statut || ''}`.toLowerCase().includes(term));
+  const top = filterRowsByPeriod(source.top || [], period, ['derniere_visite'])
+    .filter((r) => !term || `${r.nom} ${r.postnom || ''}`.toLowerCase().includes(term));
   const printRows = (title, headers, rows) => {
     printTableDocument(title, headers, rows, {
-      badge: period.toUpperCase(),
-      period,
+      badge: periodLabel(period).toUpperCase(),
+      period: periodLabel(period),
       tableTitle: 'Details commerciaux'
     });
   };
@@ -1706,7 +1760,7 @@ function Rapports({ data, searchQuery = '' }) {
           </select>
         </div>
         <div className="report-cards">
-          <Stat label="Periode" value={period} />
+          <Stat label="Periode" value={periodLabel(period)} />
           <Stat label="Factures" value={factures.length} />
           <Stat label="Creances" value={creances.length} />
           <Stat label="Produits en stock" value={stock.length} />
@@ -1718,7 +1772,7 @@ function Rapports({ data, searchQuery = '' }) {
         <div className="panel">
           <div className="panel-heading">
             <h3>Inventaire</h3>
-            <button className="btn print" onClick={() => printRows(`Fiche de stock - ${period}`, ['Produit', 'Stock', 'Valeur', 'Statut'], stock.map((r) => [r.nom, r.quantite_stock, money(r.valeur_stock_ht), r.statut]))}><Printer size={18} /> Imprimer</button>
+            <button className="btn print" onClick={() => printTableDocument('Fiche de stock', ['Produit', 'Stock', 'Valeur', 'Statut'], stock.map((r) => [r.nom, r.quantite_stock, money(r.valeur_stock_ht), r.statut]), { badge: 'INVENTAIRE', period: 'Inventaire courant', tableTitle: 'Etat du stock' })}><Printer size={18} /> Imprimer</button>
           </div>
           <Table headers={['Produit', 'Stock', 'Valeur', 'Statut']} rows={stock.map((r) => [r.nom, r.quantite_stock, money(r.valeur_stock_ht), <Badge>{r.statut}</Badge>])} />
         </div>
