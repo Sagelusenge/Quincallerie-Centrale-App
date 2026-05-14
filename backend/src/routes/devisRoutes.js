@@ -38,7 +38,7 @@ router.put('/:id',
 
 router.post('/:id/convertir',
     protect,
-    authorizeRoles('manager'),
+    authorizeRoles('manager', 'caissier'),
     convertirDevis
 );
 

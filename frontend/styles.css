@@ -977,47 +977,6 @@ textarea:focus {
   letter-spacing: 4px;
 }
 
-.login-photo-carousel {
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 10px;
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
-  height: 74px;
-  overflow: hidden;
-  position: relative;
-  width: 220px;
-}
-
-.login-photo-carousel::after {
-  background: linear-gradient(90deg, rgba(6, 43, 87, 0.12), transparent 34%, rgba(6, 43, 87, 0.2));
-  content: "";
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
-}
-
-.login-photo-track {
-  animation: loginPhotoScroll 13s infinite linear;
-  display: flex;
-  height: 100%;
-  width: max-content;
-}
-
-.login-photo-track img {
-  flex: 0 0 220px;
-  height: 74px;
-  object-fit: cover;
-  width: 220px;
-}
-
-@keyframes loginPhotoScroll {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-660px);
-  }
-}
-
 .login-panel {
   align-items: center;
   background: #f7f7fb;
@@ -2017,33 +1976,6 @@ button.kpi-card {
   color: #c60010;
 }
 
-.dashboard-focus-panel {
-  align-items: center;
-  display: grid;
-  gap: 14px;
-  grid-template-columns: auto minmax(0, 1fr) auto minmax(240px, 0.8fr);
-}
-
-.dashboard-focus-panel span {
-  background: #edf1f6;
-  border-radius: 999px;
-  color: #002761;
-  font-size: 13px;
-  font-weight: 900;
-  padding: 8px 12px;
-}
-
-.dashboard-focus-panel strong,
-.dashboard-focus-panel b {
-  color: #000c3d;
-  font-size: 20px;
-}
-
-.dashboard-focus-panel p {
-  color: #5f6574;
-  margin: 0;
-}
-
 .manager-mid {
   grid-template-columns: minmax(0, 2.15fr) minmax(330px, 1fr);
 }
@@ -2468,21 +2400,119 @@ button.kpi-card {
   margin-bottom: 16px;
 }
 
-.category-list {
-  display: grid;
-  gap: 14px;
+.category-market {
+  padding: 26px;
 }
 
-.category-card {
-  align-items: center;
-  background: #fff;
-  border: 1px solid #c5cad6;
-  border-radius: 8px;
+.category-market-heading p {
+  color: #5f6574;
+  margin: 6px 0 0;
+}
+
+.category-market-layout {
   display: grid;
-  gap: 16px;
-  grid-template-columns: 54px minmax(0, 1fr) auto auto;
-  min-height: 92px;
-  padding: 16px 18px;
+  gap: 28px;
+  grid-template-columns: 230px minmax(0, 1fr);
+}
+
+.category-market-nav {
+  border-right: 1px solid #d8dce5;
+  display: grid;
+  gap: 10px;
+  padding-right: 22px;
+}
+
+.category-market-nav strong {
+  color: #000c3d;
+  font-size: 21px;
+}
+
+.category-market-nav span {
+  color: #172033;
+  font-size: 17px;
+}
+
+.category-rank-zone {
+  display: grid;
+  gap: 26px;
+  min-width: 0;
+}
+
+.category-rank-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.category-rank-header h4 {
+  color: #000c3d;
+  font-size: 30px;
+  margin: 0;
+}
+
+.category-rank-header span {
+  color: #172033;
+  font-size: 18px;
+}
+
+.category-rank-list {
+  display: grid;
+  gap: 28px;
+  grid-template-columns: repeat(4, minmax(190px, 1fr));
+}
+
+.category-rank-card {
+  display: grid;
+  gap: 10px;
+  position: relative;
+}
+
+.category-rank-card > b {
+  background: #c95b00;
+  color: #fff;
+  display: inline-block;
+  font-size: 18px;
+  font-weight: 900;
+  justify-self: start;
+  padding: 8px 18px 8px 12px;
+  position: relative;
+}
+
+.category-rank-card > b::after {
+  border-bottom: 38px solid transparent;
+  border-left: 14px solid #c95b00;
+  content: "";
+  position: absolute;
+  right: -14px;
+  top: 0;
+}
+
+.category-rank-visual {
+  align-items: center;
+  background: linear-gradient(145deg, #edf1f6, #fff);
+  border-radius: 8px;
+  color: #002761;
+  display: grid;
+  height: 150px;
+  justify-items: center;
+}
+
+.category-rank-card strong {
+  color: #0057a8;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.category-rank-card p {
+  color: #364050;
+  line-height: 1.35;
+  margin: 0;
+  min-height: 38px;
+}
+
+.category-rank-card > span {
+  color: #c95b00;
+  font-weight: 900;
 }
 
 .category-icon {
@@ -2494,28 +2524,6 @@ button.kpi-card {
   height: 50px;
   justify-items: center;
   width: 50px;
-}
-
-.category-card strong {
-  color: #000c3d;
-  display: block;
-  font-size: 18px;
-}
-
-.category-card p {
-  color: #5f6574;
-  line-height: 1.35;
-  margin: 4px 0 0;
-}
-
-.category-card > span {
-  background: #f1f4f8;
-  border-radius: 999px;
-  color: #263142;
-  font-size: 13px;
-  font-weight: 900;
-  padding: 8px 12px;
-  white-space: nowrap;
 }
 
 .email-card-list {
@@ -2704,8 +2712,18 @@ button.kpi-card {
 
   .manager-mid,
   .manager-bottom,
-  .dashboard-focus-panel {
+  .category-market-layout {
     grid-template-columns: 1fr;
+  }
+
+  .category-market-nav {
+    border-right: 0;
+    border-bottom: 1px solid #d8dce5;
+    padding: 0 0 18px;
+  }
+
+  .category-rank-list {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
   }
 
   .admin-topbar {
@@ -2839,13 +2857,12 @@ button.kpi-card {
   }
 
   .product-card,
-  .category-card,
   .email-card {
     grid-template-columns: 1fr;
   }
 
-  .category-card > span {
-    justify-self: start;
+  .category-rank-list {
+    grid-template-columns: 1fr;
   }
 
   .client-spend,

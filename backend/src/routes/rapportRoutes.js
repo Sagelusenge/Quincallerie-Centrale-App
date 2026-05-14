@@ -12,8 +12,8 @@ const router = express.Router();
 
 router.get('/factures', protect, authorizeRoles('manager', 'caissier'), getFactures);
 router.get('/creances', protect, authorizeRoles('manager', 'caissier'), getCreances);
-router.get('/stock-inventaire', protect, authorizeRoles('manager', 'magasinier'), getStockInventaire);
-router.get('/top-acheteurs', protect, authorizeRoles('manager'), getTopAcheteurs);
+router.get('/stock-inventaire', protect, authorizeRoles('manager', 'magasinier', 'caissier'), getStockInventaire);
+router.get('/top-acheteurs', protect, authorizeRoles('manager', 'caissier', 'magasinier'), getTopAcheteurs);
 router.get('/historique-client/:id', protect, authorizeRoles('manager', 'caissier'), getHistoriqueClient);
 
 export default router;

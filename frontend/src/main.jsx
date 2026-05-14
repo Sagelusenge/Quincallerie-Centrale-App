@@ -550,14 +550,6 @@ function Login({ onLogin, notify, toast }) {
         </div>
         <div className="login-hero-footer">
           <span>PME SOLUTIONS</span>
-          <div className="login-photo-carousel" aria-hidden="true">
-            <div className="login-photo-track">
-              <img src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=420&q=80" alt="" />
-              <img src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=420&q=80" alt="" />
-              <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=420&q=80" alt="" />
-              <img src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=420&q=80" alt="" />
-            </div>
-          </div>
         </div>
       </section>
       <section className="login-panel">
@@ -663,9 +655,9 @@ function Page({ page, api, notify, lang, user, searchQuery }) {
         tasks.push(api('/mail/messages').then((r) => { next.extra.mailMessages = r.data || []; }).catch(() => {}));
       }
       if (page === 'rapports') {
-        tasks.push(api('/rapports/factures').then((r) => { next.extra.factures = r.data || []; }));
-        tasks.push(api('/rapports/creances').then((r) => { next.extra.creances = r.data || []; }));
-        tasks.push(api('/rapports/stock-inventaire').then((r) => { next.extra.stock = r.data || []; }));
+        tasks.push(api('/rapports/factures').then((r) => { next.extra.factures = r.data || []; }).catch(() => {}));
+        tasks.push(api('/rapports/creances').then((r) => { next.extra.creances = r.data || []; }).catch(() => {}));
+        tasks.push(api('/rapports/stock-inventaire').then((r) => { next.extra.stock = r.data || []; }).catch(() => {}));
         tasks.push(api('/rapports/top-acheteurs').then((r) => { next.extra.top = r.data || []; }).catch(() => {}));
       }
       if (adminPages.includes(page)) {
@@ -717,7 +709,6 @@ function Page({ page, api, notify, lang, user, searchQuery }) {
 }
 
 function Dashboard({ data, searchQuery = '' }) {
-  const [dashboardFocus, setDashboardFocus] = useState('clients');
   const [selectedPaymentMode, setSelectedPaymentMode] = useState('');
   const stats = data.extra.stats || {};
   const ventes = data.extra.ventesMensuelles || [];
@@ -754,12 +745,6 @@ function Dashboard({ data, searchQuery = '' }) {
   }, { cursor: 0, segments: [] }).segments;
   const selectedPayment = paymentRows.find((row) => row.mode === selectedPaymentMode) || paymentRows[0];
   const paymentPercent = paymentTotal > 0 && selectedPayment ? Math.round((selectedPayment.total / paymentTotal) * 100) : 0;
-  const focusContent = {
-    clients: { title: 'Clients suivis', value: stats.total_clients || data.clients.length || 0, detail: `${topClients.length} clients dans le top portefeuille` },
-    ca: { title: 'Chiffre d affaires', value: `USD ${Number(stats.ca_mois_en_cours || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`, detail: `${factures.length} factures visibles` },
-    devis: { title: 'Devis a traiter', value: devisAttente || 0, detail: 'Cliquez sur Devis pour convertir les attentes' },
-    stock: { title: 'Alertes stock', value: `${alertes.length || 0} produits`, detail: alertes.slice(0, 2).map((item) => item.nom).join(', ') || 'Aucune alerte critique' }
-  }[dashboardFocus];
   const invoiceStatus = (vente) => {
     const reste = Number(vente.reste_a_payer || 0);
     const total = Number(vente.montant_ttc || 0);
@@ -771,17 +756,10 @@ function Dashboard({ data, searchQuery = '' }) {
   return (
     <div className="manager-dashboard">
       <div className="grid cols-4 manager-kpis">
-        <KpiCard icon={Users} tone="blue" label="Total Clients" value={stats.total_clients || data.clients.length || 0} trend="+12 ce mois" active={dashboardFocus === 'clients'} onClick={() => setDashboardFocus('clients')} />
-        <KpiCard icon={CreditCard} tone="orange" label="CA mois en cours" value={`USD ${Number(stats.ca_mois_en_cours || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} trend="+8%" active={dashboardFocus === 'ca'} onClick={() => setDashboardFocus('ca')} />
-        <KpiCard icon={FileText} tone="pink" label="Devis en attente" value={devisAttente || 0} trend="A relancer" active={dashboardFocus === 'devis'} onClick={() => setDashboardFocus('devis')} />
-        <KpiCard icon={AlertTriangle} tone="danger" label="Alertes stock" value={`${alertes.length || 0} produits`} trend="Urgent" negative active={dashboardFocus === 'stock'} onClick={() => setDashboardFocus('stock')} />
-      </div>
-
-      <div className="panel dashboard-focus-panel">
-        <span>Detail interactif</span>
-        <strong>{focusContent.title}</strong>
-        <b>{focusContent.value}</b>
-        <p>{focusContent.detail}</p>
+        <KpiCard icon={Users} tone="blue" label="Total Clients" value={stats.total_clients || data.clients.length || 0} />
+        <KpiCard icon={CreditCard} tone="orange" label="CA mois en cours" value={`USD ${Number(stats.ca_mois_en_cours || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+        <KpiCard icon={FileText} tone="pink" label="Devis en attente" value={devisAttente || 0} />
+        <KpiCard icon={AlertTriangle} tone="danger" label="Alertes stock" value={`${alertes.length || 0} produits`} trend="Urgent" negative />
       </div>
 
       <div className="grid manager-mid">
@@ -805,7 +783,7 @@ function Dashboard({ data, searchQuery = '' }) {
                 const value = Number(row.total || 0);
                 const height = value > 0 ? Math.max(24, (value / maxVente) * 210) : 8;
                 return (
-                  <button className="activity-month" key={month} type="button" onClick={() => setDashboardFocus('ca')} title={`Activite ${month}: ${money(value)}`}>
+                  <button className="activity-month" key={month} type="button" title={`Activite ${month}: ${money(value)}`}>
                     <strong>{value > 0 ? formatUsdCompact(value).replace('USD ', '') : '-'}</strong>
                     <div className="activity-track">
                       <i style={{ height }} />
@@ -1127,7 +1105,7 @@ function Produits({ api, notify, data, submit, user, searchQuery = '' }) {
               <option value="RUPTURE">Rupture</option>
             </select>
             {canManageProducts && <button className="btn small" type="button" onClick={() => setCreating(true)}><Plus size={16} /> Ajouter produit</button>}
-            {canManageProducts && <button className="btn secondary small" type="button" onClick={() => setStocking(true)}><Package size={16} /> Mouvement stock</button>}
+            {canManageProducts && <button className="btn secondary small" type="button" onClick={() => setStocking(true)}><Package size={16} /> Approvisionnement</button>}
           </div>
         </div>
         {!canManageProducts && <div className="notice">Votre role permet de consulter les produits, sans ajout ni modification.</div>}
@@ -1704,26 +1682,42 @@ function Categories({ api, notify, data, submit, searchQuery = '' }) {
 
   return (
     <div className="grid">
-      <div className="panel">
-        <div className="panel-heading client-toolbar">
-          <h3>Categories</h3>
+      <div className="panel category-market">
+        <div className="panel-heading category-market-heading">
+          <div>
+            <h3>Meilleures categories</h3>
+            <p>Classement des familles de produits selon votre catalogue.</p>
+          </div>
           <div className="actions">
             <SearchInput value={query} onChange={setQuery} placeholder="Rechercher categorie" />
             <button className="btn small" type="button" onClick={() => setCreating(true)}><Plus size={16} /> Nouvelle categorie</button>
           </div>
         </div>
-        <div className="category-list">
-          {categories.map((c) => (
-            <article className="category-card" key={c.id_categorie}>
-              <div className="category-icon"><Tags size={24} /></div>
-              <div>
-                <strong>{c.nom}</strong>
-                <p>{c.description || 'Aucune description'}</p>
-              </div>
-              <span>{c.total_produits || 0} produits</span>
-              <RowActions onEdit={() => setEditing(c)} onDelete={() => remove(c)} />
-            </article>
-          ))}
+        <div className="category-market-layout">
+          <aside className="category-market-nav">
+            <strong>Departements</strong>
+            {categories.map((c) => <span key={c.id_categorie}>{c.nom}</span>)}
+          </aside>
+          <div className="category-rank-zone">
+            <div className="category-rank-header">
+              <h4>Categories populaires</h4>
+              <span>Page 1 sur 1</span>
+            </div>
+            <div className="category-rank-list">
+              {categories.map((c, index) => (
+                <article className="category-rank-card" key={c.id_categorie}>
+                  <b>#{index + 1}</b>
+                  <div className="category-rank-visual">
+                    <Tags size={46} />
+                  </div>
+                  <strong>{c.nom}</strong>
+                  <p>{c.description || 'Aucune description'}</p>
+                  <span>{c.total_produits || 0} produits</span>
+                  <RowActions onEdit={() => setEditing(c)} onDelete={() => remove(c)} />
+                </article>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
       {creating && (
