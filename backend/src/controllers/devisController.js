@@ -1,0 +1,364 @@
+import pool from '../config/db.js';
+
+const toNumber = (value) => Number(value);
+
+const nextId = async (connection, nomTable, prefix, size = 5) => {
+    await connection.query(
+        `UPDATE sequences SET derniere_valeur = derniere_valeur + 1 WHERE nom_table = ?`,
+        [nomTable]
+    );
+    const [rows] = await connection.query(
+        `SELECT derniere_valeur FROM sequences WHERE nom_table = ?`,
+        [nomTable]
+    );
+    return `${prefix}-${String(rows[0].derniere_valeur).padStart(size, '0')}`;
+};
+
+// GET /api/devis
+export const getAllDevis = async (req, res) => {
+    const entreprise_id = req.user.entreprise_id;
+    try {
+        const [rows] = await pool.query(
+            `SELECT d.*, c.nom AS client_nom, c.postnom AS client_postnom
+             FROM devis d
+             JOIN client c ON d.client_id = c.id_client
+             WHERE d.entreprise_id = ?
+             ORDER BY d.date_devis DESC`,
+            [entreprise_id]
+        );
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// GET /api/devis/:id
+export const getDevisById = async (req, res) => {
+    const { id } = req.params;
+    const entreprise_id = req.user.entreprise_id;
+    try {
+        const [devis] = await pool.query(
+            `SELECT d.*, c.nom AS client_nom, c.telephone AS client_tel,
+                    e.raison_sociale AS entreprise_nom, e.ville AS entreprise_ville
+             FROM devis d
+             JOIN client c ON d.client_id = c.id_client
+             JOIN entreprise e ON d.entreprise_id = e.id_entreprise
+             WHERE d.id_devis = ? AND d.entreprise_id = ?`,
+            [id, entreprise_id]
+        );
+
+        if (devis.length === 0) {
+            return res.status(404).json({ success: false, message: 'Devis non trouve' });
+        }
+
+        const [lignes] = await pool.query(
+            `SELECT ld.*, p.nom AS produit_nom
+             FROM lignes_devis ld
+             JOIN produits p ON ld.produit_id = p.id_produit
+             WHERE ld.devis_id = ? AND p.entreprise_id = ?`,
+            [id, entreprise_id]
+        );
+
+        res.json({ success: true, data: { ...devis[0], lignes } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// POST /api/devis
+export const createDevis = async (req, res) => {
+    const { client_id, lignes } = req.body;
+    const entreprise_id = req.user.entreprise_id;
+
+    if (!client_id || !Array.isArray(lignes) || lignes.length === 0) {
+        return res.status(400).json({ success: false, message: 'Client et lignes requis' });
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        const [clients] = await connection.query(
+            `SELECT id_client FROM client WHERE id_client = ? AND entreprise_id = ?`,
+            [client_id, entreprise_id]
+        );
+        if (clients.length === 0) {
+            throw new Error('Client introuvable dans votre entreprise.');
+        }
+
+        await connection.query(
+            `INSERT INTO devis (client_id, entreprise_id) VALUES (?, ?)`,
+            [client_id, entreprise_id]
+        );
+
+        const [seq] = await connection.query(
+            `SELECT derniere_valeur FROM sequences WHERE nom_table = 'devis'`
+        );
+        const id_devis = `DEV-${String(seq[0].derniere_valeur).padStart(5, '0')}`;
+
+        for (const ligne of lignes) {
+            const quantite = toNumber(ligne.quantite);
+            if (!ligne.produit_id || !Number.isFinite(quantite) || quantite <= 0) {
+                throw new Error('Chaque ligne doit contenir un produit et une quantite positive.');
+            }
+
+            const [produits] = await connection.query(
+                `SELECT id_produit, prix_ht
+                 FROM produits
+                 WHERE id_produit = ? AND entreprise_id = ?`,
+                [ligne.produit_id, entreprise_id]
+            );
+            if (produits.length === 0) {
+                throw new Error(`Produit ${ligne.produit_id} introuvable dans votre entreprise.`);
+            }
+
+            const prix = ligne.prix_unitaire_ht !== undefined
+                ? toNumber(ligne.prix_unitaire_ht)
+                : toNumber(produits[0].prix_ht);
+            if (!Number.isFinite(prix) || prix <= 0) {
+                throw new Error('Le prix unitaire doit etre positif.');
+            }
+
+            const id_ligne = await nextId(connection, 'lignes_devis', 'LDV', 6);
+            await connection.query(
+                `INSERT INTO lignes_devis
+                 (id_lignes_devis, devis_id, produit_id, quantite, prix_unitaire_ht)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [id_ligne, id_devis, ligne.produit_id, quantite, prix]
+            );
+        }
+
+        await connection.commit();
+        res.status(201).json({
+            success: true,
+            message: 'Devis cree avec succes',
+            id_devis
+        });
+    } catch (error) {
+        await connection.rollback();
+        res.status(500).json({ success: false, message: error.message });
+    } finally {
+        connection.release();
+    }
+};
+
+// PUT /api/devis/:id
+export const updateDevis = async (req, res) => {
+    const { id } = req.params;
+    const { client_id, lignes } = req.body;
+    const entreprise_id = req.user.entreprise_id;
+
+    if (!client_id || !Array.isArray(lignes) || lignes.length === 0) {
+        return res.status(400).json({ success: false, message: 'Client et lignes requis' });
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        const [devisRows] = await connection.query(
+            `SELECT id_devis, statut FROM devis WHERE id_devis = ? AND entreprise_id = ? FOR UPDATE`,
+            [id, entreprise_id]
+        );
+
+        if (devisRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ success: false, message: 'Devis non trouve' });
+        }
+
+        if (devisRows[0].statut !== 'en_attente') {
+            await connection.rollback();
+            return res.status(400).json({ success: false, message: 'Seul un devis en attente peut etre modifie' });
+        }
+
+        const [clients] = await connection.query(
+            `SELECT id_client FROM client WHERE id_client = ? AND entreprise_id = ?`,
+            [client_id, entreprise_id]
+        );
+        if (clients.length === 0) {
+            throw new Error('Client introuvable dans votre entreprise.');
+        }
+
+        await connection.query(
+            `UPDATE devis SET client_id = ? WHERE id_devis = ? AND entreprise_id = ?`,
+            [client_id, id, entreprise_id]
+        );
+        await connection.query(`DELETE FROM lignes_devis WHERE devis_id = ?`, [id]);
+
+        for (const ligne of lignes) {
+            const quantite = toNumber(ligne.quantite);
+            if (!ligne.produit_id || !Number.isFinite(quantite) || quantite <= 0) {
+                throw new Error('Chaque ligne doit contenir un produit et une quantite positive.');
+            }
+
+            const [produits] = await connection.query(
+                `SELECT id_produit, prix_ht FROM produits WHERE id_produit = ? AND entreprise_id = ?`,
+                [ligne.produit_id, entreprise_id]
+            );
+            if (produits.length === 0) {
+                throw new Error(`Produit ${ligne.produit_id} introuvable dans votre entreprise.`);
+            }
+
+            const prix = ligne.prix_unitaire_ht !== undefined
+                ? toNumber(ligne.prix_unitaire_ht)
+                : toNumber(produits[0].prix_ht);
+            if (!Number.isFinite(prix) || prix <= 0) {
+                throw new Error('Le prix unitaire doit etre positif.');
+            }
+
+            const id_ligne = await nextId(connection, 'lignes_devis', 'LDV', 6);
+            await connection.query(
+                `INSERT INTO lignes_devis
+                 (id_lignes_devis, devis_id, produit_id, quantite, prix_unitaire_ht)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [id_ligne, id, ligne.produit_id, quantite, prix]
+            );
+        }
+
+        await connection.commit();
+        res.json({ success: true, message: 'Devis mis a jour' });
+    } catch (error) {
+        await connection.rollback();
+        res.status(500).json({ success: false, message: error.message });
+    } finally {
+        connection.release();
+    }
+};
+
+// POST /api/devis/:id/convertir
+export const convertirDevis = async (req, res) => {
+    const { id } = req.params;
+    const entreprise_id = req.user.entreprise_id;
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        const [devisRows] = await connection.query(
+            `SELECT id_devis, client_id, statut
+             FROM devis
+             WHERE id_devis = ? AND entreprise_id = ?
+             FOR UPDATE`,
+            [id, entreprise_id]
+        );
+
+        if (devisRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ success: false, message: 'Devis non trouve' });
+        }
+
+        if (devisRows[0].statut !== 'en_attente') {
+            await connection.rollback();
+            return res.status(400).json({ success: false, message: 'Le devis ne peut plus etre converti.' });
+        }
+
+        const [lignes] = await connection.query(
+            `SELECT ld.produit_id, ld.quantite, ld.prix_unitaire_ht
+             FROM lignes_devis ld
+             JOIN produits p ON p.id_produit = ld.produit_id
+             WHERE ld.devis_id = ? AND p.entreprise_id = ?`,
+            [id, entreprise_id]
+        );
+
+        if (lignes.length === 0) {
+            throw new Error('Impossible de convertir un devis sans lignes.');
+        }
+
+        for (const ligne of lignes) {
+            const [stocks] = await connection.query(
+                `SELECT quantite_stock
+                 FROM produits
+                 WHERE id_produit = ? AND entreprise_id = ?
+                 FOR UPDATE`,
+                [ligne.produit_id, entreprise_id]
+            );
+            if (stocks.length === 0) {
+                throw new Error(`Produit ${ligne.produit_id} introuvable.`);
+            }
+            if (stocks[0].quantite_stock < ligne.quantite) {
+                throw new Error(`Stock insuffisant pour le produit ${ligne.produit_id}.`);
+            }
+        }
+
+        await connection.query(
+            `INSERT INTO ventes (client_id, entreprise_id, montant_ttc)
+             VALUES (?, ?, 0)`,
+            [devisRows[0].client_id, entreprise_id]
+        );
+
+        const [seq] = await connection.query(
+            `SELECT derniere_valeur FROM sequences WHERE nom_table = 'ventes'`
+        );
+        const facture_id = `FAC-${new Date().getFullYear()}-${String(seq[0].derniere_valeur).padStart(5, '0')}`;
+
+        for (const ligne of lignes) {
+            const id_ligne = await nextId(connection, 'lignes_ventes', 'LVT', 6);
+            await connection.query(
+                `INSERT INTO lignes_ventes
+                 (id_lignes_ventes, vente_id, produit_id, quantite, prix_unitaire_ht)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [id_ligne, facture_id, ligne.produit_id, ligne.quantite, ligne.prix_unitaire_ht]
+            );
+        }
+
+        await connection.query(
+            `UPDATE devis SET statut = 'converti' WHERE id_devis = ? AND entreprise_id = ?`,
+            [id, entreprise_id]
+        );
+
+        await connection.commit();
+        res.json({
+            success: true,
+            message: 'Devis converti en facture avec succes',
+            facture: facture_id
+        });
+    } catch (error) {
+        await connection.rollback();
+        res.status(500).json({ success: false, message: error.message });
+    } finally {
+        connection.release();
+    }
+};
+
+// PUT /api/devis/:id/annuler
+export const annulerDevis = async (req, res) => {
+    const { id } = req.params;
+    const entreprise_id = req.user.entreprise_id;
+    try {
+        const [result] = await pool.query(
+            `UPDATE devis
+             SET statut = 'annule'
+             WHERE id_devis = ? AND entreprise_id = ? AND statut = 'en_attente'`,
+            [id, entreprise_id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Devis non trouve ou deja traite' });
+        }
+
+        res.json({ success: true, message: 'Devis annule' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// DELETE /api/devis/:id
+export const deleteDevis = async (req, res) => {
+    const { id } = req.params;
+    const entreprise_id = req.user.entreprise_id;
+
+    try {
+        const [result] = await pool.query(
+            `DELETE FROM devis WHERE id_devis = ? AND entreprise_id = ? AND statut = 'en_attente'`,
+            [id, entreprise_id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Devis non trouve ou deja traite' });
+        }
+
+        res.json({ success: true, message: 'Devis supprime' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
