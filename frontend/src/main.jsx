@@ -1106,7 +1106,7 @@ function Dashboard({ data, searchQuery = '', setPage }) {
             <Stat label="Montant" value={money(selectedInvoice.montant_ttc)} />
             <Stat label="Reste" value={money(selectedInvoice.reste_a_payer)} />
           </div>
-          <button className="btn modal-submit" type="button" onClick={() => printDocument('Facture', [['Facture', selectedInvoice.numero_facture], ['Client', selectedInvoice.client_nom], ['Montant', money(selectedInvoice.montant_ttc)], ['Paye', money(selectedInvoice.total_paye)], ['Reste', money(selectedInvoice.reste_a_payer)]])}><Printer size={18} /> Imprimer</button>
+          <button className="btn modal-submit" type="button" onClick={() => printDocument('Facture', [['Facture', selectedInvoice.numero_facture], ['Client', selectedInvoice.client_nom], ['Montant', money(selectedInvoice.montant_ttc)], ['Paye', money(selectedInvoice.total_paye)], ['Reste', money(selectedInvoice.reste_a_payer)]], { paper: 'page' })}><Printer size={18} /> Imprimer</button>
         </Modal>
       )}
     </div>
@@ -1496,7 +1496,7 @@ function Devis({ api, notify, data, submit, searchQuery = '' }) {
             {d.statut === 'en_attente' && <button className="btn small" onClick={() => convert(d.id_devis)}>Convertir</button>}
             <RowActions
               onEdit={d.statut === 'en_attente' ? () => startEdit(d) : null}
-              onPrint={() => printDocument('Devis', [['Numero', d.numero_devis], ['Client', `${d.client_nom} ${d.client_postnom || ''}`], ['Montant', money(d.montant_ttc)], ['Statut', d.statut]])}
+              onPrint={() => printDocument('Devis', [['Numero', d.numero_devis], ['Client', `${d.client_nom} ${d.client_postnom || ''}`], ['Montant', money(d.montant_ttc)], ['Statut', d.statut]], { paper: 'page' })}
               onDelete={d.statut === 'en_attente' ? () => remove(d) : null}
             />
           </div>
@@ -1596,7 +1596,7 @@ function Ventes({ api, notify, data, submit, searchQuery = '' }) {
           money(v.reste_a_payer),
           <RowActions
             onEdit={Number(v.total_paye) === 0 ? () => startEdit(v) : null}
-            onPrint={() => printDocument('Facture', [['Facture', v.numero_facture], ['Client', v.client_nom], ['Montant', money(v.montant_ttc)], ['Paye', money(v.total_paye)], ['Reste', money(v.reste_a_payer)]])}
+            onPrint={() => printDocument('Facture', [['Facture', v.numero_facture], ['Client', v.client_nom], ['Montant', money(v.montant_ttc)], ['Paye', money(v.total_paye)], ['Reste', money(v.reste_a_payer)]], { paper: 'page' })}
             onDelete={Number(v.total_paye) === 0 ? () => remove(v) : null}
           />
         ])} />
