@@ -16,7 +16,7 @@ const getTransporter = () => {
 
 export const isMailReady = () => Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
 
-export const sendMail = async ({ to, subject, text, html }) => {
+export const sendMail = async ({ to, subject, text, html, replyTo, fromName }) => {
     const transporter = getTransporter();
 
     if (!transporter) {
@@ -24,7 +24,8 @@ export const sendMail = async ({ to, subject, text, html }) => {
     }
 
     const info = await transporter.sendMail({
-        from: `"CRM PME" <${process.env.EMAIL_USER}>`,
+        from: `"${fromName || 'CRM PME'}" <${process.env.EMAIL_USER}>`,
+        ...(replyTo ? { replyTo } : {}),
         to,
         subject,
         text,

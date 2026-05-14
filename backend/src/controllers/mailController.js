@@ -5,7 +5,7 @@ export const getMailStatus = (req, res) => {
         success: true,
         data: {
             ready: isMailReady(),
-            sender: process.env.EMAIL_USER || null
+            sender: req.user?.email || process.env.EMAIL_USER || null
         }
     });
 };
@@ -25,7 +25,9 @@ export const sendCustomMail = async (req, res) => {
             to,
             subject,
             text: message,
-            html: `<div style="font-family:Arial,sans-serif;line-height:1.6">${String(message).replace(/\n/g, '<br>')}</div>`
+            html: `<div style="font-family:Arial,sans-serif;line-height:1.6">${String(message).replace(/\n/g, '<br>')}</div>`,
+            replyTo: req.user?.email,
+            fromName: req.user?.nom || 'CRM PME'
         });
 
         if (result.skipped) {

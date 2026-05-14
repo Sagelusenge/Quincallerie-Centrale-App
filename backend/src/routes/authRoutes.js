@@ -1,5 +1,5 @@
 import express from 'express';
-import { login, getMe, forgotPassword } from '../controllers/authController.js';
+import { login, getMe, forgotPassword, changePassword } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -7,5 +7,6 @@ const router = express.Router();
 router.post('/login', login);         // POST /api/auth/login
 router.post('/forgot-password', forgotPassword);
 router.get('/me', protect, getMe);    // GET  /api/auth/me
+router.post('/change-password', protect, changePassword);
 
 export default router;
