@@ -110,3 +110,28 @@ export const getAlertesStock = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// GET /api/dashboard/produits-plus-vendus
+export const getProduitsPlusVendus = async (req, res) => {
+    const entreprise_id = req.user.entreprise_id;
+
+    try {
+        const [rows] = await pool.query(
+            `SELECT p.id_produit, p.nom, p.reference_produit,
+                    SUM(lv.quantite) AS quantite_vendue,
+                    SUM(lv.quantite * lv.prix_unitaire_ht) AS total_ht
+             FROM lignes_ventes lv
+             JOIN ventes v ON v.id_ventes = lv.vente_id
+             JOIN produits p ON p.id_produit = lv.produit_id
+             WHERE v.entreprise_id = ?
+             GROUP BY p.id_produit
+             ORDER BY quantite_vendue DESC, total_ht DESC
+             LIMIT 3`,
+            [entreprise_id]
+        );
+
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

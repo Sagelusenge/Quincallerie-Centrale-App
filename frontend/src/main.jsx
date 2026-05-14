@@ -200,13 +200,16 @@ function printDocument(title, rows) {
         <title>${title}</title>
         <style>
           body{font-family:Arial,sans-serif;padding:32px;color:#111827}
-          h1{margin:0 0 24px}
+          .print-head{align-items:center;border-bottom:3px solid #002761;display:flex;gap:14px;margin-bottom:24px;padding-bottom:18px}
+          .print-logo{align-items:center;background:#002761;border-radius:8px;color:#ffae2b;display:grid;font-size:22px;font-weight:900;height:54px;justify-items:center;width:54px}
+          h1{margin:0;font-size:25px;color:#002761}
+          .print-sub{color:#64748b;font-size:13px;margin-top:4px}
           table{border-collapse:collapse;width:100%}
           th,td{border-bottom:1px solid #e5e7eb;padding:14px;text-align:left}
           th{width:220px;background:#f8fafc}
         </style>
       </head>
-      <body><h1>${title}</h1><table>${content}</table></body>
+      <body><div class="print-head"><div class="print-logo">CRM</div><div><h1>${title}</h1><div class="print-sub">CRM PME - Document imprime</div></div></div><table>${content}</table></body>
     </html>
   `);
   win.document.close();
@@ -343,7 +346,7 @@ function App() {
         <div className="brand">
           {!isSuperAdmin && <div className="brand-mark">C</div>}
           <div>
-            <strong>CRM Afrique</strong>
+            <strong>CRM PME</strong>
             <span>{isSuperAdmin ? 'SME Solutions' : 'SME Solutions'}</span>
           </div>
         </div>
@@ -434,7 +437,7 @@ function App() {
             )}
           </section>
         )}
-        <Page page={page} api={api} notify={notify} lang={lang} />
+        <Page page={page} api={api} notify={notify} lang={lang} user={user} />
       </main>
       {toast && <div className="toast">{toast}</div>}
     </div>
@@ -446,6 +449,7 @@ function Login({ authType, setAuthType, onLogin, notify, toast, lang }) {
   const [forgotEmail, setForgotEmail] = useState('');
   const [showForgot, setShowForgot] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     setForm({ email: authType === 'super_admin' ? 'admin@crm-pme.local' : '', password: authType === 'super_admin' ? 'Admin@2026' : '' });
@@ -485,7 +489,7 @@ function Login({ authType, setAuthType, onLogin, notify, toast, lang }) {
         <div className="login-hero-content">
           <div className="login-hero-brand">
             <Briefcase size={58} />
-            <strong>CRM Afrique</strong>
+            <strong>CRM PME</strong>
           </div>
           <h1>Optimisez la gestion de votre PME avec une solution de confiance.</h1>
           <p>La plateforme tout-en-un concue pour les entrepreneurs africains. Gerez vos clients, stocks et facturations en toute simplicite.</p>
@@ -523,13 +527,15 @@ function Login({ authType, setAuthType, onLogin, notify, toast, lang }) {
               </span>
               <span className="input-shell">
                 <LockKeyhole size={22} />
-                <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="••••••••" required />
-                <Eye size={22} />
+                <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="••••••••" required />
+                <button className="password-eye" type="button" onClick={() => setShowPassword(!showPassword)} title={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
+                  <Eye size={22} />
+                </button>
               </span>
             </label>
             <label className="remember-row">
               <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-              Rester connecte pendant 30 jours
+              Remember me
             </label>
             <button className="btn login-submit">Se connecter <LogIn size={20} /></button>
           </form>
@@ -542,23 +548,21 @@ function Login({ authType, setAuthType, onLogin, notify, toast, lang }) {
             </form>
           )}
           <div className="login-role-block">
-            <span>Acces par role :</span>
+            <span>Type d'acces</span>
             <div className="role-pills">
-              <button type="button" className={authType === 'super_admin' ? 'active' : ''} onClick={() => setAuthType('super_admin')}>Super Admin</button>
-              <button type="button" className={authType === 'user' ? 'active' : ''} onClick={() => setAuthType('user')}>Manager</button>
-              <button type="button" onClick={() => setAuthType('user')}>Caissier</button>
-              <button type="button" onClick={() => setAuthType('user')}>Magasinier</button>
+              <button type="button" className={authType === 'user' ? 'active' : ''} onClick={() => setAuthType('user')}>Entreprise</button>
+              <button type="button" className={authType === 'super_admin' ? 'active' : ''} onClick={() => setAuthType('super_admin')}>Administration</button>
             </div>
           </div>
         </div>
-        <footer className="login-footer">© 2024 CRM Afrique. Tous droits reserves. <a>Confidentialite</a> | <a>Aide</a></footer>
+        <footer className="login-footer">© 2026 CRM PME. Tous droits reserves. <a>Confidentialite</a> | <a>Aide</a></footer>
       </section>
       {toast && <div className="toast">{toast}</div>}
     </main>
   );
 }
 
-function Page({ page, api, notify, lang }) {
+function Page({ page, api, notify, lang, user }) {
   const [data, setData] = useState({ clients: [], produits: [], categories: [], devis: [], ventes: [], extra: {} });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -582,8 +586,11 @@ function Page({ page, api, notify, lang }) {
         tasks.push(api('/dashboard/stats').then((r) => { next.extra.stats = r.data || {}; }).catch(() => {}));
         tasks.push(api('/dashboard/ventes-mensuelles').then((r) => { next.extra.ventesMensuelles = r.data || []; }).catch(() => {}));
         tasks.push(api('/dashboard/alertes-stock').then((r) => { next.extra.alertes = r.data || []; }).catch(() => {}));
+        tasks.push(api('/dashboard/produits-plus-vendus').then((r) => { next.extra.produitsPlusVendus = r.data || []; }).catch(() => {}));
+        tasks.push(api('/produits/mouvements-recents').then((r) => { next.extra.mouvementsStock = r.data || []; }).catch(() => {}));
         tasks.push(api('/rapports/top-acheteurs').then((r) => { next.extra.top = r.data || []; }).catch(() => {}));
       }
+      if (page === 'produits') tasks.push(api('/produits/mouvements-recents').then((r) => { next.extra.mouvementsStock = r.data || []; }).catch(() => {}));
       if (page === 'paiements') tasks.push(api('/paiements/rapport-caisse').then((r) => { next.extra.caisse = r.data || []; }).catch(() => {}));
       if (page === 'utilisateurs') tasks.push(api('/utilisateurs').then((r) => { next.extra.utilisateurs = r.data || []; }));
       if (page === 'mails') tasks.push(api('/mail/status').then((r) => { next.extra.mailStatus = r.data || {}; }).catch(() => {}));
@@ -622,7 +629,7 @@ function Page({ page, api, notify, lang }) {
   if (loading) return <div className="panel">Chargement...</div>;
   if (error) return <p className="notice">{error}</p>;
 
-  const props = { api, notify, data, submit, lang };
+  const props = { api, notify, data, submit, lang, user };
   if (page === 'dashboard') return <Dashboard data={data} />;
   if (page === 'clients') return <Clients {...props} />;
   if (page === 'produits') return <Produits {...props} />;
@@ -646,6 +653,7 @@ function Dashboard({ data }) {
   const ventes = data.extra.ventesMensuelles || [];
   const alertes = data.extra.alertes || [];
   const topClients = (data.extra.top || []).slice(0, 3);
+  const topProducts = data.extra.produitsPlusVendus || [];
   const factures = (data.ventes || []).slice(0, 5);
   const devisAttente = (data.devis || []).filter((devis) => String(devis.statut || '').includes('attente')).length;
   const months = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin'];
@@ -753,6 +761,43 @@ function Dashboard({ data }) {
           <button className="portfolio-link" type="button">Analyse complete du portefeuille <ArrowRight size={20} /></button>
         </div>
       </div>
+
+      <div className="panel top-products-panel">
+        <div className="panel-heading">
+          <h3>Produits les plus vendus</h3>
+          <span className="panel-pill">Top 3</span>
+        </div>
+        <div className="top-products-chart">
+          {topProducts.length ? topProducts.map((product, index) => {
+            const maxQty = Math.max(...topProducts.map((p) => Number(p.quantite_vendue || 0)), 1);
+            const width = Math.max(18, (Number(product.quantite_vendue || 0) / maxQty) * 100);
+            return (
+              <article key={product.id_produit || product.nom}>
+                <div className="product-rank">{index + 1}</div>
+                <div>
+                  <strong>{product.nom}</strong>
+                  <span>{product.reference_produit || 'Produit'}</span>
+                </div>
+                <div className="product-bar"><i style={{ width: `${width}%` }} /></div>
+                <b>{product.quantite_vendue || 0}</b>
+              </article>
+            );
+          }) : <div className="empty large">Aucune vente produit</div>}
+        </div>
+      </div>
+
+      <div className="panel">
+        <div className="panel-heading">
+          <h3>Mouvements stock recents</h3>
+          <span className="panel-pill">{(data.extra.mouvementsStock || []).length} mouvements</span>
+        </div>
+        <Table headers={['Produit', 'Type', 'Quantite', 'Date']} rows={(data.extra.mouvementsStock || []).map((m) => [
+          m.produit_nom,
+          <Badge>{m.type_mouvement}</Badge>,
+          m.quantite,
+          formatDate(m.date_mouvement)
+        ])} />
+      </div>
     </div>
   );
 }
@@ -824,8 +869,25 @@ function Clients({ api, notify, data, submit }) {
   const [form, setForm] = useState({ nom: '', postnom: '', telephone: '' });
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [history, setHistory] = useState(null);
   const [query, setQuery] = useState('');
-  const clients = data.clients.filter((c) => `${c.nom} ${c.postnom || ''} ${c.telephone || ''}`.toLowerCase().includes(query.toLowerCase()));
+  const [statusFilter, setStatusFilter] = useState('tous');
+  const clients = data.clients
+    .filter((c) => `${c.nom} ${c.postnom || ''} ${c.telephone || ''}`.toLowerCase().includes(query.toLowerCase()))
+    .filter((c) => {
+      if (statusFilter === 'actifs') return Number(c.nombre_achats || 0) > 0;
+      if (statusFilter === 'sans_achat') return Number(c.nombre_achats || 0) === 0;
+      if (statusFilter === 'vip') return Number(c.ca_total || 0) >= 1000;
+      return true;
+    });
+  const showHistory = async (client) => {
+    try {
+      const detail = await api(`/clients/${client.id_client}`);
+      setHistory(detail.data);
+    } catch (error) {
+      notify(error.message);
+    }
+  };
   const saveEdit = () => submit(async () => {
     await api(`/clients/${editing.id_client}`, { method: 'PUT', body: JSON.stringify(editing) });
     setEditing(null);
@@ -839,10 +901,21 @@ function Clients({ api, notify, data, submit }) {
     });
   };
   return (
-    <div className="grid cols-2">
-      <CreateLauncher title="Nouveau client" description="Ajouter un client au portefeuille." buttonLabel="Ajouter client" onClick={() => setCreating(true)} />
+    <div className="grid">
       <div className="panel">
-        <div className="panel-heading"><h3>Portefeuille clients</h3><SearchInput value={query} onChange={setQuery} placeholder="Rechercher un client" /></div>
+        <div className="panel-heading client-toolbar">
+          <h3>Portefeuille clients</h3>
+          <div className="actions">
+            <SearchInput value={query} onChange={setQuery} placeholder="Rechercher un client" />
+            <select className="compact-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <option value="tous">Tous</option>
+              <option value="actifs">Actifs</option>
+              <option value="sans_achat">Sans achat</option>
+              <option value="vip">VIP</option>
+            </select>
+            <button className="btn small" type="button" onClick={() => setCreating(true)}><Plus size={16} /> Ajouter client</button>
+          </div>
+        </div>
         <Table headers={['Nom', 'Telephone', 'Achats', 'CA', 'Actions']} rows={clients.map((c) => [
           `${c.nom} ${c.postnom || ''}`,
           c.telephone || '-',
@@ -851,6 +924,8 @@ function Clients({ api, notify, data, submit }) {
           <RowActions
             onEdit={() => setEditing(c)}
             onPrint={() => printDocument('Fiche client', [['Nom', `${c.nom} ${c.postnom || ''}`], ['Telephone', c.telephone || '-'], ['Achats', c.nombre_achats || 0], ['CA', money(c.ca_total)]])}
+            onToggle={() => showHistory(c)}
+            toggleLabel="Historique"
             onDelete={() => remove(c)}
           />
         ])} />
@@ -867,6 +942,17 @@ function Clients({ api, notify, data, submit }) {
           </Form>
         </Modal>
       )}
+      {history && (
+        <Modal title={`Historique client - ${history.client?.nom || ''}`} onClose={() => setHistory(null)}>
+          <Table headers={['Facture', 'Date', 'Montant', 'Paye', 'Reste']} rows={(history.historique || []).map((row) => [
+            row.numero_facture,
+            formatDate(row.date_vente),
+            money(row.montant_ttc),
+            money(row.total_paye),
+            money(row.reste)
+          ])} />
+        </Modal>
+      )}
       {editing && (
         <Modal title="Modifier client" onClose={() => setEditing(null)}>
           <Form onSubmit={saveEdit}>
@@ -881,15 +967,19 @@ function Clients({ api, notify, data, submit }) {
   );
 }
 
-function Produits({ api, notify, data, submit }) {
+function Produits({ api, notify, data, submit, user }) {
   const [form, setForm] = useState({ reference_produit: '', nom: '', categorie_id: '', prix_ht: '', taux_tva: 16, quantite_stock: 0, seuil_alerte: 5 });
   const [stock, setStock] = useState({ id: '', quantite: 1 });
   const [creating, setCreating] = useState(false);
   const [stocking, setStocking] = useState(false);
   const [editing, setEditing] = useState(null);
   const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('tous');
   const categoryOptions = [['', 'Sans categorie'], ...data.categories.map((c) => [c.id_categorie, c.nom])];
-  const produits = data.produits.filter((p) => `${p.reference_produit} ${p.nom} ${p.categorie_nom || ''}`.toLowerCase().includes(query.toLowerCase()));
+  const canManageProducts = user?.role !== 'caissier';
+  const produits = data.produits
+    .filter((p) => `${p.reference_produit} ${p.nom} ${p.categorie_nom || ''}`.toLowerCase().includes(query.toLowerCase()))
+    .filter((p) => statusFilter === 'tous' || p.statut_stock === statusFilter);
   const saveEdit = () => submit(async () => {
     await api(`/produits/${editing.id_produit}`, { method: 'PUT', body: JSON.stringify(editing) });
     setEditing(null);
@@ -905,23 +995,58 @@ function Produits({ api, notify, data, submit }) {
   return (
     <>
       <div className="grid cols-2">
-        <CreateLauncher title="Nouveau produit" description="Ajouter un article ou service au catalogue." buttonLabel="Ajouter produit" onClick={() => setCreating(true)} />
-        <CreateLauncher title="Approvisionnement" description="Modifier le stock depuis une action controlee." buttonLabel="Mettre a jour stock" onClick={() => setStocking(true)} />
+        {canManageProducts && <CreateLauncher title="Nouveau produit" description="Ajouter un article ou service au catalogue." buttonLabel="Ajouter produit" onClick={() => setCreating(true)} />}
+        {canManageProducts && <CreateLauncher title="Approvisionnement" description="Modifier le stock depuis une action controlee." buttonLabel="Mettre a jour stock" onClick={() => setStocking(true)} />}
+        {!canManageProducts && <div className="notice">Votre role permet de consulter les produits, sans ajout ni modification.</div>}
       </div>
       <div className="panel" style={{ marginTop: 16 }}>
-        <div className="panel-heading"><h3>Catalogue</h3><SearchInput value={query} onChange={setQuery} placeholder="Rechercher produit ou categorie" /></div>
-        <Table headers={['Reference', 'Produit', 'Categorie', 'Prix HT', 'Stock', 'Statut', 'Actions']} rows={produits.map((p) => [
-          p.reference_produit,
-          p.nom,
-          p.categorie_nom || '-',
-          money(p.prix_ht),
-          p.quantite_stock,
-          <Badge>{p.statut_stock}</Badge>,
-          <RowActions
-            onEdit={() => setEditing(p)}
-            onPrint={() => printDocument('Fiche produit', [['Reference', p.reference_produit], ['Produit', p.nom], ['Prix HT', money(p.prix_ht)], ['Stock', p.quantite_stock], ['Statut', p.statut_stock]])}
-            onDelete={() => remove(p)}
-          />
+        <div className="panel-heading product-toolbar">
+          <h3>Catalogue</h3>
+          <div className="actions">
+            <SearchInput value={query} onChange={setQuery} placeholder="Rechercher produit ou categorie" />
+            <select className="compact-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <option value="tous">Tous les statuts</option>
+              <option value="OK">OK</option>
+              <option value="ALERTE">Alerte</option>
+              <option value="RUPTURE">Rupture</option>
+            </select>
+          </div>
+        </div>
+        <div className="product-card-grid">
+          {produits.map((p) => (
+            <article className="product-card" key={p.id_produit}>
+              <div className="product-photo">{String(p.nom || 'P').charAt(0).toUpperCase()}</div>
+              <div className="product-card-body">
+                <div className="product-card-title">
+                  <strong>{p.nom}</strong>
+                  <Badge>{p.statut_stock}</Badge>
+                </div>
+                <p>{p.categorie_nom || 'Sans categorie'} - Ref. {p.reference_produit}</p>
+                <div className="product-meta">
+                  <span>{money(p.prix_ht)}</span>
+                  <span>Stock {p.quantite_stock}</span>
+                </div>
+                <div className="actions">
+                  {canManageProducts && <button className="action edit" type="button" title="Modifier" onClick={() => setEditing(p)}><Edit3 size={17} /></button>}
+                  <button className="action print-action" type="button" title="Imprimer" onClick={() => printDocument('Fiche produit', [['Reference', p.reference_produit], ['Produit', p.nom], ['Prix HT', money(p.prix_ht)], ['Stock', p.quantite_stock], ['Statut', p.statut_stock]])}><Printer size={17} /></button>
+                  {user?.role === 'manager' && <button className="action delete" type="button" title="Supprimer" onClick={() => remove(p)}><Trash2 size={17} /></button>}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+      <div className="panel" style={{ marginTop: 16 }}>
+        <div className="panel-heading">
+          <h3>Mouvements stock</h3>
+          <span className="panel-pill">Dernieres operations</span>
+        </div>
+        <Table headers={['Produit', 'Reference', 'Type', 'Quantite', 'Date']} rows={(data.extra.mouvementsStock || []).map((m) => [
+          m.produit_nom,
+          m.reference_produit,
+          <Badge>{m.type_mouvement}</Badge>,
+          m.quantite,
+          formatDate(m.date_mouvement)
         ])} />
       </div>
       {creating && (
@@ -976,6 +1101,11 @@ function Devis({ api, notify, data, submit }) {
   const [form, setForm] = useState({ client_id: '', lignes: [emptyLine()] });
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('tous');
+  const devisList = data.devis
+    .filter((d) => `${d.numero_devis} ${d.client_nom || ''} ${d.client_postnom || ''}`.toLowerCase().includes(query.toLowerCase()))
+    .filter((d) => statusFilter === 'tous' || d.statut === statusFilter);
   const convert = (id) => submit(async () => {
     const result = await api(`/devis/${id}/convertir`, { method: 'POST', body: '{}' });
     notify(`Facture creee: ${result.facture}`);
@@ -1014,8 +1144,19 @@ function Devis({ api, notify, data, submit }) {
     <div className="grid cols-2">
       <CreateLauncher title="Nouveau devis" description="Composer une proposition commerciale." buttonLabel="Creer devis" onClick={() => setCreating(true)} />
       <div className="panel">
-        <h3>Devis</h3>
-        <Table headers={['Numero', 'Client', 'Montant', 'Statut', 'Actions']} rows={data.devis.map((d) => [
+        <div className="panel-heading">
+          <h3>Devis</h3>
+          <div className="actions">
+            <SearchInput value={query} onChange={setQuery} placeholder="Rechercher un devis" />
+            <select className="compact-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <option value="tous">Tous</option>
+              <option value="en_attente">En attente</option>
+              <option value="converti">Converti</option>
+              <option value="annule">Annule</option>
+            </select>
+          </div>
+        </div>
+        <Table headers={['Numero', 'Client', 'Montant', 'Statut', 'Actions']} rows={devisList.map((d) => [
           d.numero_devis,
           `${d.client_nom} ${d.client_postnom || ''}`,
           money(d.montant_ttc),
@@ -1172,6 +1313,7 @@ function Paiements({ api, notify, data, submit }) {
 
 function Rapports({ data }) {
   const { factures = [], creances = [], stock = [], top = [] } = data.extra;
+  const [period, setPeriod] = useState('journalier');
   const printRows = (title, headers, rows) => {
     const win = window.open('', '_blank', 'width=1000,height=720');
     if (!win) return;
@@ -1192,7 +1334,24 @@ function Rapports({ data }) {
   };
   return (
     <div className="grid">
-      <div className="panel"><div className="panel-heading"><h3>Creances</h3><button className="btn print" onClick={() => printRows('Creances', ['Facture', 'Client', 'Du', 'Paye', 'Reste'], creances.map((r) => [r.numero_facture, r.client_nom, money(r.montant_du), money(r.montant_paye), money(r.reste_a_payer)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Facture', 'Client', 'Du', 'Paye', 'Reste']} rows={creances.map((r) => [r.numero_facture, r.client_nom, money(r.montant_du), money(r.montant_paye), money(r.reste_a_payer)])} /></div>
+      <div className="panel report-period-panel">
+        <div className="panel-heading">
+          <h3>Rapports</h3>
+          <select className="compact-filter" value={period} onChange={(event) => setPeriod(event.target.value)}>
+            <option value="journalier">Journalier</option>
+            <option value="hebdomadaire">Hebdomadaire</option>
+            <option value="mensuel">Mensuel</option>
+            <option value="annuel">Annuel</option>
+          </select>
+        </div>
+        <div className="report-cards">
+          <Stat label="Periode" value={period} />
+          <Stat label="Factures" value={factures.length} />
+          <Stat label="Creances" value={creances.length} />
+          <Stat label="Produits en stock" value={stock.length} />
+        </div>
+      </div>
+      <div className="panel"><div className="panel-heading"><h3>Creances</h3><button className="btn print" onClick={() => printRows(`Creances - ${period}`, ['Facture', 'Client', 'Du', 'Paye', 'Reste'], creances.map((r) => [r.numero_facture, r.client_nom, money(r.montant_du), money(r.montant_paye), money(r.reste_a_payer)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Facture', 'Client', 'Du', 'Paye', 'Reste']} rows={creances.map((r) => [r.numero_facture, r.client_nom, money(r.montant_du), money(r.montant_paye), money(r.reste_a_payer)])} /></div>
       <div className="panel"><div className="panel-heading"><h3>Factures</h3><button className="btn print" onClick={() => printRows('Factures', ['Facture', 'Client', 'Montant', 'Reste'], factures.map((r) => [r.numero_facture, `${r.client_nom} ${r.client_postnom || ''}`, money(r.montant_ttc), money(r.reste_a_payer)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Facture', 'Client', 'Montant', 'Reste']} rows={factures.map((r) => [r.numero_facture, `${r.client_nom} ${r.client_postnom || ''}`, money(r.montant_ttc), money(r.reste_a_payer)])} /></div>
       <div className="grid cols-2">
         <div className="panel"><h3>Inventaire</h3><Table headers={['Produit', 'Stock', 'Valeur', 'Statut']} rows={stock.map((r) => [r.nom, r.quantite_stock, money(r.valeur_stock_ht), <Badge>{r.statut}</Badge>])} /></div>
@@ -1207,6 +1366,7 @@ function Utilisateurs({ api, notify, data, submit }) {
   const [form, setForm] = useState({ nom: '', email: '', mot_de_passe: 'User@123', role: 'caissier' });
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [historyUser, setHistoryUser] = useState(null);
   const roles = [['manager', 'Manager'], ['caissier', 'Caissier'], ['magasinier', 'Magasinier']];
   const create = () => submit(async () => {
     await api('/utilisateurs', { method: 'POST', body: JSON.stringify(form) });
@@ -1244,7 +1404,8 @@ function Utilisateurs({ api, notify, data, submit }) {
           <RowActions
             onEdit={() => setEditing({ ...u, mot_de_passe: '' })}
             onPrint={() => printDocument('Utilisateur', [['Nom', u.nom], ['Email', u.email], ['Role', u.role], ['Statut', u.actif ? 'actif' : 'suspendu']])}
-            onToggle={() => toggle(u)}
+            onToggle={() => setHistoryUser(u)}
+            toggleLabel="Vision et historique"
             onDelete={() => remove(u)}
           />
         ])} />
@@ -1269,6 +1430,17 @@ function Utilisateurs({ api, notify, data, submit }) {
             <Input label="Nouveau mot de passe optionnel" type="password" value={editing.mot_de_passe || ''} onChange={(mot_de_passe) => setEditing({ ...editing, mot_de_passe })} />
             <button className="btn">Mettre a jour</button>
           </Form>
+        </Modal>
+      )}
+      {historyUser && (
+        <Modal title={`Vision utilisateur - ${historyUser.nom}`} onClose={() => setHistoryUser(null)}>
+          <div className="user-history">
+            <Stat label="Role" value={historyUser.role} />
+            <Stat label="Statut" value={historyUser.actif ? 'Actif' : 'Suspendu'} />
+            <Stat label="Email" value={historyUser.email} />
+          </div>
+          <div className="notice">Le journal detaille des actions sera alimente par le module de notification et d'audit applicatif.</div>
+          <button className="btn modal-submit" type="button" onClick={() => toggle(historyUser)}>Changer statut</button>
         </Modal>
       )}
     </div>
@@ -1504,6 +1676,29 @@ function SuperAdminDashboard({ api, notify, data, submit }) {
           <button className="btn modal-submit" type="button" onClick={() => setCreating(true)}>
             Continuer vers Etape 2 <ArrowRight size={20} />
           </button>
+        </div>
+      </div>
+
+      <div className="grid cols-2 admin-graphs">
+        <div className="panel">
+          <div className="panel-heading">
+            <h3>Repartition entreprises</h3>
+            <span className="panel-pill">Actives / suspendues</span>
+          </div>
+          <div className="admin-bars">
+            <article><span>Actives</span><i style={{ width: `${Math.min(100, Number(stats.entreprises_actives || 0) / Math.max(Number(stats.total_entreprises || 1), 1) * 100)}%` }} /><b>{stats.entreprises_actives || 0}</b></article>
+            <article><span>Suspendues</span><i className="danger-bar" style={{ width: `${Math.min(100, Number(stats.entreprises_suspendues || 0) / Math.max(Number(stats.total_entreprises || 1), 1) * 100)}%` }} /><b>{stats.entreprises_suspendues || 0}</b></article>
+          </div>
+        </div>
+        <div className="panel">
+          <div className="panel-heading">
+            <h3>Activite plateforme</h3>
+            <span className="panel-pill">{stats.total_ventes || 0} transactions</span>
+          </div>
+          <div className="platform-meter">
+            <strong>{formatUsdCompact(stats.ca_global)}</strong>
+            <span>Chiffre d'affaires global surveille</span>
+          </div>
         </div>
       </div>
 

@@ -2,7 +2,8 @@ import express from 'express';
 import { 
     getStats, 
     getVentesMensuelles, 
-    getAlertesStock 
+    getAlertesStock,
+    getProduitsPlusVendus
 } from '../controllers/dashboardController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
@@ -25,6 +26,12 @@ router.get('/alertes-stock',
     protect, 
     authorizeRoles('manager', 'magasinier'), 
     getAlertesStock
+);
+
+router.get('/produits-plus-vendus',
+    protect,
+    authorizeRoles('manager'),
+    getProduitsPlusVendus
 );
 
 export default router;

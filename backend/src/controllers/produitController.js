@@ -23,6 +23,25 @@ export const getAllProduits = async (req, res) => {
     }
 };
 
+export const getMouvementsStock = async (req, res) => {
+    const entreprise_id = req.user.entreprise_id;
+    try {
+        const [rows] = await pool.query(
+            `SELECT m.id_mouvement, m.type_mouvement, m.quantite, m.date_mouvement,
+                    p.nom AS produit_nom, p.reference_produit
+             FROM mouvements_stock m
+             JOIN produits p ON p.id_produit = m.produit_id
+             WHERE p.entreprise_id = ?
+             ORDER BY m.date_mouvement DESC
+             LIMIT 8`,
+            [entreprise_id]
+        );
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 // POST /api/produits
 export const createProduit = async (req, res) => {
     const { reference_produit, nom, categorie_id, prix_ht, taux_tva, quantite_stock, seuil_alerte } = req.body;

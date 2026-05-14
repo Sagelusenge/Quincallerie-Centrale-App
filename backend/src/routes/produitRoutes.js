@@ -1,6 +1,7 @@
 import express from 'express';
 import { 
     getAllProduits, 
+    getMouvementsStock,
     createProduit, 
     updateProduit, 
     deleteProduit, 
@@ -15,6 +16,12 @@ router.get('/',
     protect, 
     authorizeRoles('manager', 'caissier', 'magasinier'), 
     getAllProduits
+);
+
+router.get('/mouvements-recents',
+    protect,
+    authorizeRoles('manager', 'magasinier'),
+    getMouvementsStock
 );
 
 // ✅ MANAGER + MAGASINIER peuvent créer/modifier/supprimer

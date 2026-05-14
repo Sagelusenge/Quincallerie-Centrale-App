@@ -1081,6 +1081,15 @@ textarea:focus {
   outline: 0;
 }
 
+.password-eye {
+  align-items: center;
+  background: transparent;
+  color: #747b88;
+  display: inline-flex;
+  justify-content: center;
+  padding: 0;
+}
+
 .remember-row {
   align-items: center;
   display: flex;
@@ -1789,7 +1798,7 @@ body.theme-light .debt-preview {
   padding: 12px 18px;
 }
 
-/* Theme unifie CRM Afrique pour tous les espaces */
+/* Theme unifie CRM PME pour tous les espaces */
 .shell {
   background: #f7f7fb;
 }
@@ -2281,6 +2290,192 @@ body.theme-light .debt-preview {
   justify-content: center;
   padding: 28px;
   width: 100%;
+}
+
+.top-products-panel {
+  overflow: hidden;
+}
+
+.top-products-chart {
+  display: grid;
+  gap: 14px;
+}
+
+.top-products-chart article {
+  align-items: center;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 44px minmax(150px, 0.8fr) minmax(140px, 1fr) auto;
+}
+
+.product-rank {
+  align-items: center;
+  background: #ffae2b;
+  border-radius: 8px;
+  color: #002761;
+  display: grid;
+  font-weight: 900;
+  height: 42px;
+  justify-items: center;
+  width: 42px;
+}
+
+.top-products-chart strong {
+  color: #000c3d;
+  display: block;
+}
+
+.top-products-chart span {
+  color: #5f6574;
+  display: block;
+  margin-top: 4px;
+}
+
+.product-bar {
+  background: #e9e9ee;
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.product-bar i {
+  background: #002761;
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+.compact-filter {
+  min-height: 40px;
+  width: auto;
+}
+
+.product-card-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.product-card {
+  background: #fff;
+  border: 1px solid #c5cad6;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  min-height: 156px;
+  overflow: hidden;
+}
+
+.product-photo {
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgba(0, 39, 97, 0.9), rgba(255, 174, 43, 0.78)),
+    #e9eef6;
+  color: #fff;
+  display: grid;
+  font-size: 36px;
+  font-weight: 900;
+  justify-items: center;
+}
+
+.product-card-body {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.product-card-title {
+  align-items: start;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.product-card-title strong {
+  color: #000c3d;
+  font-size: 18px;
+}
+
+.product-card p {
+  color: #5f6574;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.product-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.product-meta span {
+  background: #f1f4f8;
+  border-radius: 999px;
+  color: #263142;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 7px 10px;
+}
+
+.report-cards {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.user-history {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 16px;
+}
+
+.admin-graphs {
+  margin-top: 24px;
+}
+
+.admin-bars {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-bars article {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 120px minmax(0, 1fr) 50px;
+}
+
+.admin-bars i {
+  background: #002761;
+  border-radius: 999px;
+  display: block;
+  height: 12px;
+}
+
+.admin-bars .danger-bar {
+  background: #c60010;
+}
+
+.platform-meter {
+  align-content: center;
+  background: #f4f4f8;
+  border: 1px solid #d7dbe5;
+  border-radius: 8px;
+  display: grid;
+  min-height: 150px;
+  padding: 24px;
+  text-align: center;
+}
+
+.platform-meter strong {
+  color: #000c3d;
+  font-size: 34px;
+}
+
+.platform-meter span {
+  color: #5f6574;
+  margin-top: 8px;
 }
 
 .mail-status {
