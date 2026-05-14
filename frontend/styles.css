@@ -643,12 +643,47 @@ tr:last-child td {
 
 .line-row {
   align-items: end;
-  grid-template-columns: minmax(0, 1fr) minmax(104px, 0.42fr);
+  grid-template-columns: minmax(0, 1.7fr) minmax(118px, 0.45fr);
 }
 
 .line-row label,
 .line-row select,
 .line-row input {
+  min-width: 0;
+}
+
+.line-product-picker {
+  min-width: 0;
+}
+
+.line-product-layout {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 58px minmax(0, 1fr);
+}
+
+.line-product-image {
+  align-items: center;
+  background: #e9edf5;
+  border: 1px solid #c9d2df;
+  border-radius: 7px;
+  color: #002761;
+  display: grid;
+  height: 74px;
+  justify-items: center;
+  overflow: hidden;
+}
+
+.line-product-image img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.line-product-fields {
+  display: grid;
+  gap: 8px;
   min-width: 0;
 }
 

@@ -1155,23 +1155,53 @@ function CreateLauncher({ title, description, buttonLabel, onClick }) {
 }
 
 function LineEditor({ lignes, setLignes, produits }) {
+  const [productQueries, setProductQueries] = useState({});
   const update = (index, patch) => {
     setLignes(lignes.map((ligne, i) => i === index ? { ...ligne, ...patch } : ligne));
   };
   const add = () => setLignes([...lignes, { produit_id: produits[0]?.id_produit || '', quantite: 1 }]);
   const remove = (index) => setLignes(lignes.filter((_, i) => i !== index));
+  const filteredProducts = (index, currentId) => {
+    const term = String(productQueries[index] || '').trim().toLowerCase();
+    const selected = produits.find((p) => p.id_produit === currentId);
+    const matches = produits.filter((p) => !term || `${p.nom} ${p.reference_produit || ''} ${p.categorie_nom || ''}`.toLowerCase().includes(term));
+    const merged = selected && !matches.some((p) => p.id_produit === selected.id_produit) ? [selected, ...matches] : matches;
+    return merged;
+  };
 
   return (
     <div className="line-editor">
-      {lignes.map((ligne, index) => (
-        <div className="form-row line-row" key={index}>
-          <Select label={`Produit ${index + 1}`} value={ligne.produit_id} onChange={(produit_id) => update(index, { produit_id })} options={produits.map((p) => [p.id_produit, `${p.nom} - ${money(p.prix_ht)}`])} />
-          <div className="line-qty">
-            <Input label="Quantite" type="number" value={ligne.quantite} onChange={(quantite) => update(index, { quantite })} />
-            {lignes.length > 1 && <button className="action delete" type="button" onClick={() => remove(index)} title="Supprimer ligne"><Trash2 size={16} /></button>}
+      {lignes.map((ligne, index) => {
+        const selectedProduct = produits.find((p) => p.id_produit === ligne.produit_id) || produits[0];
+        const productOptions = filteredProducts(index, ligne.produit_id);
+        return (
+          <div className="form-row line-row" key={index}>
+            <label className="line-product-picker">
+              Produit {index + 1}
+              <div className="line-product-layout">
+                <div className="line-product-image">
+                  {selectedProduct ? <img src={selectedProduct.photo_url || imageForIndex(index)} alt="" /> : <Box size={24} />}
+                </div>
+                <div className="line-product-fields">
+                  <input
+                    type="search"
+                    value={productQueries[index] || ''}
+                    onChange={(event) => setProductQueries({ ...productQueries, [index]: event.target.value })}
+                    placeholder="Rechercher produit, reference ou categorie"
+                  />
+                  <select value={ligne.produit_id} onChange={(e) => update(index, { produit_id: e.target.value })} required>
+                    {productOptions.map((p) => <option key={p.id_produit} value={p.id_produit}>{p.nom} - {money(p.prix_ht)}</option>)}
+                  </select>
+                </div>
+              </div>
+            </label>
+            <div className="line-qty">
+              <Input label="Quantite" type="number" value={ligne.quantite} onChange={(quantite) => update(index, { quantite })} />
+              {lignes.length > 1 && <button className="action delete" type="button" onClick={() => remove(index)} title="Supprimer ligne"><Trash2 size={16} /></button>}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
       <button className="btn secondary small" type="button" onClick={add}>Ajouter une ligne</button>
     </div>
   );
@@ -1509,7 +1539,7 @@ function Devis({ api, notify, data, submit, searchQuery = '' }) {
             setCreating(false);
             notify('Devis cree');
           })}>
-            <Select label="Client" value={form.client_id} onChange={(client_id) => setForm({ ...form, client_id })} options={data.clients.map((c) => [c.id_client, `${c.nom} ${c.postnom || ''}`])} />
+            <SearchableSelect label="Client" value={form.client_id} onChange={(client_id) => setForm({ ...form, client_id })} options={data.clients.map((c) => [c.id_client, `${c.nom} ${c.postnom || ''} ${c.telephone || ''}`])} placeholder="Rechercher client, postnom ou telephone" />
             <LineEditor lignes={form.lignes} setLignes={(lignes) => setForm({ ...form, lignes })} produits={data.produits} />
             <button className="btn modal-submit">Creer le devis <ArrowRight size={20} /></button>
           </Form>
@@ -1518,7 +1548,7 @@ function Devis({ api, notify, data, submit, searchQuery = '' }) {
       {editing && (
         <Modal title="Modifier devis" onClose={() => setEditing(null)}>
           <Form onSubmit={saveEdit}>
-            <Select label="Client" value={editing.client_id} onChange={(client_id) => setEditing({ ...editing, client_id })} options={data.clients.map((c) => [c.id_client, `${c.nom} ${c.postnom || ''}`])} />
+            <SearchableSelect label="Client" value={editing.client_id} onChange={(client_id) => setEditing({ ...editing, client_id })} options={data.clients.map((c) => [c.id_client, `${c.nom} ${c.postnom || ''} ${c.telephone || ''}`])} placeholder="Rechercher client, postnom ou telephone" />
             <LineEditor lignes={editing.lignes} setLignes={(lignes) => setEditing({ ...editing, lignes })} produits={data.produits} />
             <button className="btn">Mettre a jour</button>
           </Form>
@@ -2453,6 +2483,22 @@ function Select({ label, value, onChange, options, required = true }) {
     <label>{label}
       <select value={value} onChange={(e) => onChange(e.target.value)} required={required}>
         {options.map(([id, labelText]) => <option key={id} value={id}>{labelText}</option>)}
+      </select>
+    </label>
+  );
+}
+
+function SearchableSelect({ label, value, onChange, options, placeholder = 'Rechercher...', required = true }) {
+  const [query, setQuery] = useState('');
+  const term = query.trim().toLowerCase();
+  const selected = options.find(([id]) => id === value);
+  const matches = options.filter(([, labelText]) => !term || String(labelText).toLowerCase().includes(term));
+  const filtered = selected && !matches.some(([id]) => id === selected[0]) ? [selected, ...matches] : matches;
+  return (
+    <label>{label}
+      <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={placeholder} />
+      <select value={value} onChange={(e) => onChange(e.target.value)} required={required}>
+        {filtered.map(([id, labelText]) => <option key={id} value={id}>{labelText}</option>)}
       </select>
     </label>
   );
