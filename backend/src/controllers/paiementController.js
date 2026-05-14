@@ -5,9 +5,15 @@ export const createPaiement = async (req, res) => {
     const { vente_id, montant, mode_paiement, reference_externe, telephone_payeur } = req.body;
     const entreprise_id = req.user.entreprise_id;
     const montantNumber = Number(montant);
+    const reference = String(reference_externe || '').trim();
+    const telephone = String(telephone_payeur || '').trim();
 
     if (!vente_id || !Number.isFinite(montantNumber) || montantNumber <= 0 || !mode_paiement) {
         return res.status(400).json({ success: false, message: 'Donnees paiement incompletes ou invalides' });
+    }
+
+    if (mode_paiement === 'mobile_money' && (!reference || !telephone)) {
+        return res.status(400).json({ success: false, message: 'Reference et numero requis pour Mobile Money' });
     }
 
     try {
@@ -36,8 +42,8 @@ export const createPaiement = async (req, res) => {
             vente_id,
             montantNumber,
             mode_paiement,
-            reference_externe || null,
-            telephone_payeur || null
+            reference || null,
+            telephone || null
         ]);
 
         res.status(201).json({

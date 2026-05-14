@@ -1475,8 +1475,23 @@ function Paiements({ api, notify, data, submit, searchQuery = '' }) {
   const [invoiceQuery, setInvoiceQuery] = useState('');
   const filteredFactures = factures.filter((v) => `${v.numero_facture} ${v.client_nom || ''} ${v.reste_a_payer || ''}`.toLowerCase().includes(invoiceQuery.toLowerCase()));
   const selectedFacture = filteredFactures.find((v) => v.id_ventes === (form.vente_id || filteredFactures[0]?.id_ventes)) || factures.find((v) => v.id_ventes === form.vente_id);
+  const mobileMoneyRequired = form.mode_paiement === 'mobile_money';
   const term = `${searchQuery} ${query}`.trim().toLowerCase();
   const caisseRows = (data.extra.caisse || []).filter((r) => `${r.Date} ${r.Mode_Paiement} ${r.Total_Encaisse}`.toLowerCase().includes(term));
+  const savePayment = () => {
+    if (mobileMoneyRequired && (!form.reference_externe.trim() || !form.telephone_payeur.trim())) {
+      notify('Reference et numero obligatoires pour Mobile Money');
+      return;
+    }
+    submit(async () => {
+      await api('/paiements', {
+        method: 'POST',
+        body: JSON.stringify({ ...form, vente_id: form.vente_id || filteredFactures[0]?.id_ventes || factures[0]?.id_ventes })
+      });
+      setCreating(false);
+      notify('Paiement enregistre');
+    });
+  };
   return (
     <div className="grid">
       <div className="panel">
@@ -1491,7 +1506,7 @@ function Paiements({ api, notify, data, submit, searchQuery = '' }) {
       </div>
       {creating && (
         <Modal title="Encaisser un paiement" onClose={() => setCreating(false)}>
-          <Form onSubmit={() => submit(async () => { await api('/paiements', { method: 'POST', body: JSON.stringify({ ...form, vente_id: form.vente_id || filteredFactures[0]?.id_ventes || factures[0]?.id_ventes }) }); setCreating(false); notify('Paiement enregistre'); })}>
+          <Form onSubmit={savePayment}>
             <SearchInput value={invoiceQuery} onChange={setInvoiceQuery} placeholder="Rechercher une facture ou un client" />
             <Select label="Facture" value={form.vente_id} onChange={(vente_id) => setForm({ ...form, vente_id })} options={filteredFactures.map((v) => [v.id_ventes, `${v.numero_facture} - ${v.client_nom} - reste ${money(v.reste_a_payer)}`])} />
             <div className="form-row">
@@ -1506,8 +1521,8 @@ function Paiements({ api, notify, data, submit, searchQuery = '' }) {
               </div>
             )}
             <div className="form-row">
-              <Input label="Reference" value={form.reference_externe} onChange={(reference_externe) => setForm({ ...form, reference_externe })} />
-              <Input label="Telephone payeur" value={form.telephone_payeur} onChange={(telephone_payeur) => setForm({ ...form, telephone_payeur })} />
+              <Input label={mobileMoneyRequired ? 'Reference Mobile Money' : 'Reference'} value={form.reference_externe} onChange={(reference_externe) => setForm({ ...form, reference_externe })} required={mobileMoneyRequired} />
+              <Input label={mobileMoneyRequired ? 'Numero Mobile Money' : 'Telephone payeur'} value={form.telephone_payeur} onChange={(telephone_payeur) => setForm({ ...form, telephone_payeur })} required={mobileMoneyRequired} />
             </div>
             <button className="btn modal-submit">Enregistrer paiement <ArrowRight size={20} /></button>
           </Form>
