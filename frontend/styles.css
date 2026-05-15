@@ -643,7 +643,11 @@ tr:last-child td {
 
 .line-row {
   align-items: end;
+  background: #f8fafc;
+  border: 1px solid #d8deea;
+  border-radius: 8px;
   grid-template-columns: minmax(0, 1.7fr) minmax(118px, 0.45fr);
+  padding: 12px;
 }
 
 .line-row label,
@@ -660,7 +664,7 @@ tr:last-child td {
   align-items: center;
   display: grid;
   gap: 10px;
-  grid-template-columns: 58px minmax(0, 1fr);
+  grid-template-columns: 52px minmax(0, 1fr);
 }
 
 .line-product-image {
@@ -670,7 +674,7 @@ tr:last-child td {
   border-radius: 7px;
   color: #002761;
   display: grid;
-  height: 74px;
+  height: 64px;
   justify-items: center;
   overflow: hidden;
 }
@@ -690,6 +694,78 @@ tr:last-child td {
 .line-editor {
   display: grid;
   gap: 12px;
+}
+
+.quote-modal {
+  max-width: 840px;
+}
+
+.quote-form {
+  display: grid;
+  gap: 14px;
+}
+
+.quote-block {
+  border: 1px solid #d5dbe8;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.quote-block-head {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.quote-block-head span {
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.quote-block-head strong {
+  color: #000c3d;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.quote-summary {
+  background: #eef4ff;
+  border: 1px solid #c9d7ef;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.quote-summary div {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.quote-summary span {
+  color: #4b5563;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.quote-summary strong {
+  color: #000c3d;
+}
+
+.quote-total {
+  border-top: 1px solid #c9d7ef;
+  margin-top: 4px;
+  padding-top: 10px;
+}
+
+.quote-total strong {
+  font-size: 22px;
 }
 
 .line-qty {
@@ -2893,6 +2969,7 @@ button.kpi-card {
   .grid.cols-3,
   .grid.cols-4,
   .form-row,
+  .line-row,
   .login-page {
     grid-template-columns: 1fr;
   }

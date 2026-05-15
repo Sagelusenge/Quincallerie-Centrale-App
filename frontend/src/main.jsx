@@ -1207,6 +1207,44 @@ function LineEditor({ lignes, setLignes, produits }) {
   );
 }
 
+function quoteTotal(lignes, produits) {
+  return lignes.reduce((total, ligne) => {
+    const produit = produits.find((p) => p.id_produit === ligne.produit_id);
+    return total + (Number(produit?.prix_ht || 0) * Number(ligne.quantite || 0));
+  }, 0);
+}
+
+function QuoteComposer({ form, setForm, clients, produits, submitLabel }) {
+  const selectedClient = clients.find((client) => client.id_client === form.client_id) || clients[0];
+  const subtotal = quoteTotal(form.lignes, produits);
+  const totalTtc = subtotal * 1.16;
+  const clientOptions = clients.map((c) => [c.id_client, `${c.nom} ${c.postnom || ''} ${c.telephone || ''}`]);
+  return (
+    <div className="quote-form">
+      <section className="quote-block">
+        <div className="quote-block-head">
+          <span>Client</span>
+          {selectedClient && <strong>{selectedClient.nom} {selectedClient.postnom || ''}</strong>}
+        </div>
+        <SearchableSelect label="Selectionner le client" value={form.client_id} onChange={(client_id) => setForm({ ...form, client_id })} options={clientOptions} placeholder="Rechercher client, postnom ou telephone" />
+      </section>
+      <section className="quote-block">
+        <div className="quote-block-head">
+          <span>Articles</span>
+          <strong>{form.lignes.length} ligne{form.lignes.length > 1 ? 's' : ''}</strong>
+        </div>
+        <LineEditor lignes={form.lignes} setLignes={(lignes) => setForm({ ...form, lignes })} produits={produits} />
+      </section>
+      <aside className="quote-summary">
+        <div><span>Sous-total HT</span><strong>{money(subtotal)}</strong></div>
+        <div><span>TVA estimee</span><strong>{money(totalTtc - subtotal)}</strong></div>
+        <div className="quote-total"><span>Total TTC</span><strong>{money(totalTtc)}</strong></div>
+      </aside>
+      <button className="btn modal-submit">{submitLabel} <ArrowRight size={20} /></button>
+    </div>
+  );
+}
+
 function Clients({ api, notify, data, submit, searchQuery = '' }) {
   const [form, setForm] = useState({ nom: '', postnom: '', telephone: '' });
   const [creating, setCreating] = useState(false);
@@ -1533,24 +1571,20 @@ function Devis({ api, notify, data, submit, searchQuery = '' }) {
         ])} />
       </div>
       {creating && (
-        <Modal title="Nouveau devis" onClose={() => setCreating(false)}>
+        <Modal title="Nouveau devis" onClose={() => setCreating(false)} className="quote-modal">
           <Form onSubmit={() => submit(async () => {
             await api('/devis', { method: 'POST', body: JSON.stringify({ client_id: form.client_id || data.clients[0]?.id_client, lignes: buildLignes(form.lignes) }) });
             setCreating(false);
             notify('Devis cree');
           })}>
-            <SearchableSelect label="Client" value={form.client_id} onChange={(client_id) => setForm({ ...form, client_id })} options={data.clients.map((c) => [c.id_client, `${c.nom} ${c.postnom || ''} ${c.telephone || ''}`])} placeholder="Rechercher client, postnom ou telephone" />
-            <LineEditor lignes={form.lignes} setLignes={(lignes) => setForm({ ...form, lignes })} produits={data.produits} />
-            <button className="btn modal-submit">Creer le devis <ArrowRight size={20} /></button>
+            <QuoteComposer form={form} setForm={setForm} clients={data.clients} produits={data.produits} submitLabel="Creer le devis" />
           </Form>
         </Modal>
       )}
       {editing && (
-        <Modal title="Modifier devis" onClose={() => setEditing(null)}>
+        <Modal title="Modifier devis" onClose={() => setEditing(null)} className="quote-modal">
           <Form onSubmit={saveEdit}>
-            <SearchableSelect label="Client" value={editing.client_id} onChange={(client_id) => setEditing({ ...editing, client_id })} options={data.clients.map((c) => [c.id_client, `${c.nom} ${c.postnom || ''} ${c.telephone || ''}`])} placeholder="Rechercher client, postnom ou telephone" />
-            <LineEditor lignes={editing.lignes} setLignes={(lignes) => setEditing({ ...editing, lignes })} produits={data.produits} />
-            <button className="btn">Mettre a jour</button>
+            <QuoteComposer form={editing} setForm={setEditing} clients={data.clients} produits={data.produits} submitLabel="Mettre a jour" />
           </Form>
         </Modal>
       )}
@@ -2435,10 +2469,10 @@ function Form({ children, onSubmit }) {
   return <form className="form" onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>{children}</form>;
 }
 
-function Modal({ title, children, onClose }) {
+function Modal({ title, children, onClose, className = '' }) {
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
-      <section className="modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+      <section className={`modal ${className}`.trim()} role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
         <div className="panel-heading">
           <h3>{title}</h3>
           <button className="icon-button ghost-icon" type="button" onClick={onClose} title="Fermer"><X size={20} /></button>
