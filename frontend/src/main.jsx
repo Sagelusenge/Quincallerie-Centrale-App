@@ -2102,7 +2102,7 @@ const defaultCompanyForm = () => ({
   nom_manager: '',
   email_manager: '',
   mdp_manager: 'Manager@123',
-  plan: 'plus'
+  plan: 'mensuel'
 });
 
 const formatDate = (value) => {
@@ -2146,17 +2146,10 @@ function CompanyForm({ form, setForm, onSubmit, mode = 'create' }) {
             <Input label="Email manager" type="email" value={form.email_manager || ''} onChange={(email_manager) => setForm({ ...form, email_manager })} required />
           </div>
           <Input label="Mot de passe manager" type="password" value={form.mdp_manager || ''} onChange={(mdp_manager) => setForm({ ...form, mdp_manager })} required />
-          <div className="subscription-options">
-            <button className={`subscription-card ${form.plan === 'plus' ? 'selected' : ''}`} type="button" onClick={() => setForm({ ...form, plan: 'plus' })}>
-              <span className="radio-dot" />
-              <strong>Enterprise Plus</strong>
-              <small>USD 499 / Mois - Illimite</small>
-            </button>
-            <button className={`subscription-card ${form.plan === 'standard' ? 'selected' : ''}`} type="button" onClick={() => setForm({ ...form, plan: 'standard' })}>
-              <span className="radio-dot" />
-              <strong>Standard PME</strong>
-              <small>USD 149 / Mois - Jusqu'a 50 staff</small>
-            </button>
+          <div className="subscription-card selected">
+            <span className="radio-dot" />
+            <strong>Abonnement PME</strong>
+            <small>USD 10 / Mois</small>
           </div>
         </>
       )}
@@ -2222,8 +2215,8 @@ function SuperAdminDashboard({ api, notify, data, submit, searchQuery = '' }) {
           </div>
           <div className="subscription-card selected">
             <span className="radio-dot" />
-            <strong>Enterprise Plus</strong>
-            <small>USD 499 / Mois - Illimite</small>
+            <strong>Abonnement PME</strong>
+            <small>USD 10 / Mois</small>
           </div>
           <button className="btn modal-submit" type="button" onClick={() => setCreating(true)}>
             Creer le dossier <ArrowRight size={20} />
@@ -2370,7 +2363,7 @@ function SuperAdminAbonnements({ api, notify, data, submit, searchQuery = '' }) 
         </div>
         <Table headers={['Entreprise', 'Plan', 'Statut', 'Expiration', 'Reste', 'CA', 'Actions']} rows={entreprises.map((e) => [
           e.raison_sociale,
-          Number(e.nb_employes || 0) > 50 ? 'Enterprise Plus' : 'Standard PME',
+          'Abonnement PME - USD 10 / Mois',
           <AdminCompanyStatus entreprise={e} />,
           formatDate(e.date_expiration_abonnement),
           `${e.jours_restants || 0} jours`,

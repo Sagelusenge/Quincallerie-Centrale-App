@@ -1703,6 +1703,7 @@ body.theme-light .debt-preview {
 }
 
 .admin-dashboard-main {
+  align-items: stretch;
   grid-template-columns: minmax(0, 2fr) minmax(340px, 0.96fr);
   margin-top: 40px;
 }
@@ -1742,7 +1743,9 @@ body.theme-light .debt-preview {
 }
 
 .create-company-card {
-  align-self: start;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
 }
 
 .create-company-card p {
@@ -1808,6 +1811,10 @@ body.theme-light .debt-preview {
   color: #747b8d;
   min-height: 46px;
   padding: 12px 16px;
+}
+
+.create-company-card .subscription-card {
+  margin-top: auto;
 }
 
 .setting-row {
