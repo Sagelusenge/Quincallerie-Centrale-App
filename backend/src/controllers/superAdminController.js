@@ -15,6 +15,21 @@ const nextUtilisateurId = async (connection) => {
     return `USR-${String(rows[0].derniere_valeur).padStart(5, '0')}`;
 };
 
+const tableExists = async (connection, tableName) => {
+    const [rows] = await connection.query(
+        `SELECT COUNT(*) AS total
+         FROM information_schema.TABLES
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?`,
+        [tableName]
+    );
+    return Number(rows[0]?.total || 0) > 0;
+};
+
+const deleteFromTableIfExists = async (connection, tableName, query, params) => {
+    if (!(await tableExists(connection, tableName))) return;
+    await connection.query(query, params);
+};
+
 // ══════════════════════════════════════
 // LOGIN SUPER ADMIN
 // ══════════════════════════════════════
@@ -320,7 +335,7 @@ export const modifierAbonnement = async (req, res) => {
 // ══════════════════════════════════════
 // SUPPRIMER UNE ENTREPRISE
 // ══════════════════════════════════════
-export const supprimerEntreprise = async (req, res) => {
+const supprimerEntrepriseLegacy = async (req, res) => {
     const { id } = req.params;
 
     try {
@@ -344,5 +359,75 @@ export const supprimerEntreprise = async (req, res) => {
     } catch (error) {
         console.error('Erreur supprimerEntreprise: - superAdminController.js:298', error.message);
         res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const supprimerEntreprise = async (req, res) => {
+    const { id } = req.params;
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        const [entreprises] = await connection.query(
+            'SELECT id_entreprise FROM entreprise WHERE id_entreprise = ? FOR UPDATE',
+            [id]
+        );
+
+        if (entreprises.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({
+                success: false,
+                message: 'Entreprise non trouvee'
+            });
+        }
+
+        await connection.query(
+            `DELETE p FROM paiement p
+             JOIN ventes v ON v.id_ventes = p.vente_id
+             WHERE v.entreprise_id = ?`,
+            [id]
+        );
+        await connection.query(
+            `DELETE lv FROM lignes_ventes lv
+             JOIN ventes v ON v.id_ventes = lv.vente_id
+             WHERE v.entreprise_id = ?`,
+            [id]
+        );
+        await connection.query(
+            `DELETE ld FROM lignes_devis ld
+             JOIN devis d ON d.id_devis = ld.devis_id
+             WHERE d.entreprise_id = ?`,
+            [id]
+        );
+        await connection.query('DELETE FROM devis WHERE entreprise_id = ?', [id]);
+        await connection.query('DELETE FROM ventes WHERE entreprise_id = ?', [id]);
+        await connection.query(
+            `DELETE ms FROM mouvements_stock ms
+             JOIN produits p ON p.id_produit = ms.produit_id
+             WHERE p.entreprise_id = ?`,
+            [id]
+        );
+        await deleteFromTableIfExists(connection, 'categorie_produit', 'DELETE FROM categorie_produit WHERE entreprise_id = ?', [id]);
+        await connection.query('DELETE FROM produits WHERE entreprise_id = ?', [id]);
+        await connection.query('DELETE FROM client WHERE entreprise_id = ?', [id]);
+        await deleteFromTableIfExists(connection, 'mail_messages', 'DELETE FROM mail_messages WHERE entreprise_id = ?', [id]);
+        await deleteFromTableIfExists(connection, 'notifications', 'DELETE FROM notifications WHERE entreprise_id = ?', [id]);
+        await deleteFromTableIfExists(connection, 'demandes_abonnement', 'DELETE FROM demandes_abonnement WHERE entreprise_id = ?', [id]);
+        await connection.query('DELETE FROM utilisateur WHERE entreprise_id = ?', [id]);
+        await connection.query('DELETE FROM entreprise WHERE id_entreprise = ?', [id]);
+
+        await connection.commit();
+
+        res.json({
+            success: true,
+            message: 'Entreprise supprimee avec succes'
+        });
+    } catch (error) {
+        await connection.rollback();
+        console.error('Erreur supprimerEntreprise:', error.message);
+        res.status(500).json({ success: false, message: error.message });
+    } finally {
+        connection.release();
     }
 };

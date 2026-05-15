@@ -2288,7 +2288,7 @@ function SuperAdminEntreprises({ api, notify, data, submit, searchQuery = '' }) 
     notify(action === 'ACTIVER' ? 'Abonnement active' : 'Entreprise suspendue');
   });
   const remove = (entreprise) => {
-    if (!window.confirm(`Supprimer ${entreprise.raison_sociale} ?`)) return;
+    if (!window.confirm(`Vous etes sur de vouloir supprimer "${entreprise.raison_sociale}" ?\n\nCette action supprimera aussi ses clients, devis, factures, paiements, produits et utilisateurs.`)) return;
     submit(async () => {
       await api(`/super-admin/entreprises/${entreprise.id_entreprise}`, { method: 'DELETE' });
       notify('Entreprise supprimee');
