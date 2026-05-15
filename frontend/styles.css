@@ -1668,15 +1668,6 @@ body.theme-light .debt-preview {
   font-size: 32px;
 }
 
-.admin-action {
-  background: #ffa51f;
-  border-radius: 6px;
-  color: #002761;
-  font-size: 18px;
-  min-height: 56px;
-  padding-inline: 28px;
-}
-
 .admin-shell .panel,
 .admin-shell .card {
   background: #fff;
@@ -1817,22 +1808,6 @@ body.theme-light .debt-preview {
   color: #747b8d;
   min-height: 46px;
   padding: 12px 16px;
-}
-
-.floating-add {
-  align-items: center;
-  background: #ffa51f;
-  border-radius: 18px;
-  bottom: 28px;
-  box-shadow: 0 16px 34px rgba(222, 132, 0, 0.28);
-  color: #885a00;
-  display: grid;
-  height: 70px;
-  justify-items: center;
-  position: fixed;
-  right: 40px;
-  width: 70px;
-  z-index: 20;
 }
 
 .setting-row {
@@ -3012,13 +2987,6 @@ button.kpi-card {
 
   .modal {
     padding: 22px;
-  }
-
-  .floating-add {
-    bottom: 18px;
-    height: 58px;
-    right: 18px;
-    width: 58px;
   }
 
   .login-page {

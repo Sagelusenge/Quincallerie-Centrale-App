@@ -15,7 +15,6 @@ import {
   Edit3,
   Eye,
   FileText,
-  FolderPlus,
   Gauge,
   Grid2X2,
   LockKeyhole,
@@ -656,12 +655,6 @@ function App() {
               <h1>{title}</h1>
               {!isSuperAdmin && <p>{subtitle}</p>}
             </div>
-            {isSuperAdmin && page === 'superadmin' && (
-              <button className="btn admin-action" type="button" onClick={() => setPage('admin-entreprises')}>
-                <FolderPlus size={24} />
-                Nouveau Dossier
-              </button>
-            )}
           </section>
         )}
         <Page page={page} api={api} notify={notify} lang={lang} user={user} searchQuery={platformSearch} setPage={setPage} />
@@ -2233,7 +2226,7 @@ function SuperAdminDashboard({ api, notify, data, submit, searchQuery = '' }) {
             <small>USD 499 / Mois - Illimite</small>
           </div>
           <button className="btn modal-submit" type="button" onClick={() => setCreating(true)}>
-            Continuer vers Etape 2 <ArrowRight size={20} />
+            Creer le dossier <ArrowRight size={20} />
           </button>
         </div>
       </div>
@@ -2260,10 +2253,6 @@ function SuperAdminDashboard({ api, notify, data, submit, searchQuery = '' }) {
           </div>
         </div>
       </div>
-
-      <button className="floating-add" type="button" onClick={() => setCreating(true)} title="Nouvelle entreprise">
-        <Plus size={34} />
-      </button>
 
       {creating && (
         <Modal title="Creer une entreprise" onClose={() => setCreating(false)}>
