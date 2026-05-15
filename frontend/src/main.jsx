@@ -669,7 +669,7 @@ function App() {
 
 function Login({ onLogin, notify, toast }) {
   const [form, setForm] = useState({ email: '', password: '' });
-  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotMotif, setForgotMotif] = useState('');
   const [showForgot, setShowForgot] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const passwordRef = useRef(null);
@@ -696,17 +696,21 @@ function Login({ onLogin, notify, toast }) {
 
   const forgot = async (event) => {
     event.preventDefault();
+    if (!form.email) {
+      notify("Saisissez d'abord votre adresse e-mail de connexion.");
+      return;
+    }
     try {
       const response = await fetch(`${API_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: forgotEmail })
+        body: JSON.stringify({ email: form.email, motif: forgotMotif })
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.message || 'Demande impossible');
       notify(body.message);
       setShowForgot(false);
-      setForgotEmail('');
+      setForgotMotif('');
     } catch (error) {
       notify(error.message);
     }
@@ -765,8 +769,9 @@ function Login({ onLogin, notify, toast }) {
           </form>
           {showForgot && (
             <form className="forgot-box" onSubmit={forgot}>
-              <label>Email de recuperation
-                <input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required />
+              <p className="muted">La demande sera envoyee avec l'adresse saisie ci-dessus.</p>
+              <label>Motif de la demande
+                <textarea value={forgotMotif} onChange={(e) => setForgotMotif(e.target.value)} placeholder="Ex: je n'arrive plus a acceder a mon compte" />
               </label>
               <button className="btn secondary">Envoyer la demande</button>
             </form>
@@ -2290,9 +2295,10 @@ function SuperAdminEntreprises({ api, notify, data, submit, searchQuery = '' }) 
   });
   const remove = () => {
     if (!deleting) return;
+    const target = deleting;
+    setDeleting(null);
     submit(async () => {
-      await api(`/super-admin/entreprises/${deleting.id_entreprise}`, { method: 'DELETE' });
-      setDeleting(null);
+      await api(`/super-admin/entreprises/${target.id_entreprise}`, { method: 'DELETE' });
       notify('Entreprise supprimee');
     });
   };

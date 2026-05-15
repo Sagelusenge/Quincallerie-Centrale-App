@@ -184,12 +184,15 @@ export const resetRequestedPassword = async (req, res) => {
             if (req.user?.role !== 'manager') {
                 return res.status(403).json({ success: false, message: 'Seul un manager peut reinitialiser un mot de passe utilisateur.' });
             }
-            scope = ' AND entreprise_id = ?';
+            scope = ' AND u.entreprise_id = ?';
             params.push(req.user.entreprise_id);
         }
 
         const [users] = await pool.query(
-            `SELECT id_utilisateur FROM utilisateur WHERE email = ? AND actif = 1${scope}`,
+            `SELECT u.id_utilisateur, u.nom, u.email, u.role, e.raison_sociale
+             FROM utilisateur u
+             JOIN entreprise e ON e.id_entreprise = u.entreprise_id
+             WHERE u.email = ? AND u.actif = 1${scope}`,
             params
         );
 
@@ -203,14 +206,21 @@ export const resetRequestedPassword = async (req, res) => {
             [hashedPassword, users[0].id_utilisateur]
         );
 
-        res.json({ success: true, message: `Mot de passe reinitialise pour ${email}` });
+        await sendMail({
+            to: users[0].email,
+            subject: 'Nouveau mot de passe temporaire - CRM PME',
+            text: `Bonjour ${users[0].nom}, votre mot de passe temporaire est: ${new_password}. Connectez-vous puis changez-le dans vos parametres.`,
+            html: `<p>Bonjour ${users[0].nom},</p><p>Votre mot de passe temporaire est: <strong>${new_password}</strong></p><p>Connectez-vous puis changez-le dans vos parametres.</p>`
+        }).catch(() => null);
+
+        res.json({ success: true, message: `Mot de passe reinitialise pour ${email}. Un email temporaire a ete envoye.` });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
 
 export const forgotPassword = async (req, res) => {
-    const { email } = req.body;
+    const { email, motif } = req.body;
 
     if (!email) {
         return res.status(400).json({ success: false, message: 'Email requis' });
@@ -231,7 +241,8 @@ export const forgotPassword = async (req, res) => {
 
         const user = users[0];
         const titre = 'Demande de recuperation de mot de passe';
-        const message = `${user.nom} (${user.email}) demande la recuperation de son mot de passe.`;
+        const reason = motif ? ` Motif: ${motif}` : '';
+        const message = `${user.nom} (${user.email}) demande la recuperation de son mot de passe.${reason}`;
 
         if (user.role === 'manager') {
             await notifySuperAdmins({
@@ -249,7 +260,7 @@ export const forgotPassword = async (req, res) => {
             await notifyEnterpriseAdmins({ entreprise_id: user.entreprise_id, titre, message });
         }
 
-        res.json({ success: true, message: 'Demande envoyee. Un administrateur va vous assister.' });
+        res.json({ success: true, message: user.role === 'manager' ? 'Demande envoyee au super administrateur.' : 'Demande envoyee a votre administrateur.' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
