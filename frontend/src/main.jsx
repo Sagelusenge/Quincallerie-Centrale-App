@@ -2260,6 +2260,7 @@ function SuperAdminEntreprises({ api, notify, data, submit, searchQuery = '' }) 
   const [form, setForm] = useState(defaultCompanyForm());
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [deleting, setDeleting] = useState(null);
   const [query, setQuery] = useState('');
   const term = `${searchQuery} ${query}`.trim().toLowerCase();
   const entreprises = (data.extra.entreprises || []).filter((e) => `${e.raison_sociale} ${e.email || ''} ${e.ville || ''}`.toLowerCase().includes(term));
@@ -2287,10 +2288,11 @@ function SuperAdminEntreprises({ api, notify, data, submit, searchQuery = '' }) 
     await api(`/super-admin/entreprises/${entreprise.id_entreprise}/abonnement`, { method: 'PUT', body: JSON.stringify({ action, mois: 1 }) });
     notify(action === 'ACTIVER' ? 'Abonnement active' : 'Entreprise suspendue');
   });
-  const remove = (entreprise) => {
-    if (!window.confirm(`Vous etes sur de vouloir supprimer "${entreprise.raison_sociale}" ?\n\nCette action supprimera aussi ses clients, devis, factures, paiements, produits et utilisateurs.`)) return;
+  const remove = () => {
+    if (!deleting) return;
     submit(async () => {
-      await api(`/super-admin/entreprises/${entreprise.id_entreprise}`, { method: 'DELETE' });
+      await api(`/super-admin/entreprises/${deleting.id_entreprise}`, { method: 'DELETE' });
+      setDeleting(null);
       notify('Entreprise supprimee');
     });
   };
@@ -2317,7 +2319,7 @@ function SuperAdminEntreprises({ api, notify, data, submit, searchQuery = '' }) 
             onPrint={() => printDocument('Entreprise', [['Entreprise', e.raison_sociale], ['Ville', e.ville || '-'], ['Statut', e.statut_abonnement], ['Employes', e.nb_employes], ['CA', money(e.ca_total)]], { paper: 'page' })}
             onToggle={() => toggleSubscription(e)}
             toggleLabel={e.statut_abonnement === 'actif' ? 'Suspendre' : 'Activer'}
-            onDelete={() => remove(e)}
+            onDelete={() => setDeleting(e)}
           />
         ])} />
       </div>
@@ -2329,6 +2331,19 @@ function SuperAdminEntreprises({ api, notify, data, submit, searchQuery = '' }) 
       {editing && (
         <Modal title="Modifier entreprise" onClose={() => setEditing(null)}>
           <CompanyForm form={editing} setForm={setEditing} onSubmit={saveEdit} mode="edit" />
+        </Modal>
+      )}
+      {deleting && (
+        <Modal title="Confirmer la suppression" onClose={() => setDeleting(null)} className="confirm-modal">
+          <div className="confirm-delete">
+            <AlertTriangle size={34} />
+            <h4>Vous etes sur de vouloir supprimer "{deleting.raison_sociale}" ?</h4>
+            <p>Cette action supprimera aussi ses clients, devis, factures, paiements, produits et utilisateurs.</p>
+            <div className="confirm-actions">
+              <button className="btn secondary" type="button" onClick={() => setDeleting(null)}>Annuler</button>
+              <button className="btn danger" type="button" onClick={remove}>Supprimer definitivement</button>
+            </div>
+          </div>
         </Modal>
       )}
     </>

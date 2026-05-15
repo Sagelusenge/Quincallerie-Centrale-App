@@ -30,6 +30,11 @@ const deleteFromTableIfExists = async (connection, tableName, query, params) => 
     await connection.query(query, params);
 };
 
+const deleteWhereIn = async (connection, tableName, columnName, values) => {
+    if (!values.length) return;
+    await connection.query(`DELETE FROM ${tableName} WHERE ${columnName} IN (?)`, [values]);
+};
+
 // ══════════════════════════════════════
 // LOGIN SUPER ADMIN
 // ══════════════════════════════════════
@@ -382,34 +387,21 @@ export const supprimerEntreprise = async (req, res) => {
             });
         }
 
-        await connection.query(
-            `DELETE p FROM paiement p
-             JOIN ventes v ON v.id_ventes = p.vente_id
-             WHERE v.entreprise_id = ?`,
-            [id]
-        );
-        await connection.query(
-            `DELETE lv FROM lignes_ventes lv
-             JOIN ventes v ON v.id_ventes = lv.vente_id
-             WHERE v.entreprise_id = ?`,
-            [id]
-        );
-        await connection.query(
-            `DELETE ld FROM lignes_devis ld
-             JOIN devis d ON d.id_devis = ld.devis_id
-             WHERE d.entreprise_id = ?`,
-            [id]
-        );
+        const [devisRows] = await connection.query('SELECT id_devis FROM devis WHERE entreprise_id = ?', [id]);
+        const [venteRows] = await connection.query('SELECT id_ventes FROM ventes WHERE entreprise_id = ?', [id]);
+        const [produitRows] = await connection.query('SELECT id_produit FROM produits WHERE entreprise_id = ?', [id]);
+        const devisIds = devisRows.map((row) => row.id_devis);
+        const venteIds = venteRows.map((row) => row.id_ventes);
+        const produitIds = produitRows.map((row) => row.id_produit);
+
+        await deleteWhereIn(connection, 'paiement', 'vente_id', venteIds);
+        await deleteWhereIn(connection, 'lignes_ventes', 'vente_id', venteIds);
+        await deleteWhereIn(connection, 'lignes_devis', 'devis_id', devisIds);
         await connection.query('DELETE FROM devis WHERE entreprise_id = ?', [id]);
         await connection.query('DELETE FROM ventes WHERE entreprise_id = ?', [id]);
-        await connection.query(
-            `DELETE ms FROM mouvements_stock ms
-             JOIN produits p ON p.id_produit = ms.produit_id
-             WHERE p.entreprise_id = ?`,
-            [id]
-        );
-        await deleteFromTableIfExists(connection, 'categorie_produit', 'DELETE FROM categorie_produit WHERE entreprise_id = ?', [id]);
+        await deleteWhereIn(connection, 'mouvements_stock', 'produit_id', produitIds);
         await connection.query('DELETE FROM produits WHERE entreprise_id = ?', [id]);
+        await deleteFromTableIfExists(connection, 'categorie_produit', 'DELETE FROM categorie_produit WHERE entreprise_id = ?', [id]);
         await connection.query('DELETE FROM client WHERE entreprise_id = ?', [id]);
         await deleteFromTableIfExists(connection, 'mail_messages', 'DELETE FROM mail_messages WHERE entreprise_id = ?', [id]);
         await deleteFromTableIfExists(connection, 'notifications', 'DELETE FROM notifications WHERE entreprise_id = ?', [id]);
