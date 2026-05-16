@@ -768,35 +768,70 @@ function Login({ onLogin, notify, toast }) {
 
 function PasswordSettings({ api, notify, user, targetEmail, isSuperAdmin, onClose }) {
   const [form, setForm] = useState({ new_password: '', confirm_password: '' });
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState(null);
   const accountEmail = targetEmail || user?.email || '';
 
   const save = async () => {
+    if (saving) return;
+    setFeedback(null);
     if (form.new_password !== form.confirm_password) {
-      notify('Les mots de passe ne correspondent pas');
+      setFeedback({ type: 'error', message: 'Les mots de passe ne correspondent pas.' });
       return;
     }
-    if (targetEmail && targetEmail !== user?.email) {
-      await api('/auth/reset-request-password', { method: 'POST', body: JSON.stringify({ email: targetEmail, new_password: form.new_password }) });
-      notify(`Mot de passe reinitialise pour ${targetEmail}`);
-    } else if (isSuperAdmin) {
-      notify('Selectionnez une notification contenant l email du demandeur.');
-    } else {
-      await api('/auth/change-password', { method: 'POST', body: JSON.stringify(form) });
-      notify('Mot de passe mis a jour');
+    if (String(form.new_password || '').length < 6) {
+      setFeedback({ type: 'error', message: 'Le mot de passe doit contenir au moins 6 caracteres.' });
+      return;
     }
-    onClose();
+    if (!accountEmail) {
+      setFeedback({ type: 'error', message: 'Aucun identifiant detecte pour cette reconfiguration.' });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      let message = '';
+      if (targetEmail && targetEmail !== user?.email) {
+        const response = await api('/auth/reset-request-password', { method: 'POST', body: JSON.stringify({ email: targetEmail, new_password: form.new_password }) });
+        message = response.message || `Mot de passe reinitialise pour ${targetEmail}.`;
+      } else if (isSuperAdmin) {
+        message = 'Selectionnez une notification contenant l email du demandeur.';
+        setFeedback({ type: 'error', message });
+        return;
+      } else {
+        const response = await api('/auth/change-password', { method: 'POST', body: JSON.stringify(form) });
+        message = response.message || 'Mot de passe mis a jour.';
+      }
+      setFeedback({ type: 'success', message });
+      notify(message);
+      setForm({ new_password: '', confirm_password: '' });
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.message || 'Operation refusee.' });
+      notify(error.message || 'Operation refusee');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <Modal title="Reconfiguration du mot de passe" onClose={onClose}>
-      <Form onSubmit={() => save().catch((error) => notify(error.message))}>
+      <Form onSubmit={save}>
         <div className="debt-preview">
           <span>Identifiant</span>
           <strong>{accountEmail || 'Demande sans email detecte'}</strong>
         </div>
         <Input label="Nouveau mot de passe" type="password" value={form.new_password} onChange={(new_password) => setForm({ ...form, new_password })} required />
         <Input label="Confirmer le mot de passe" type="password" value={form.confirm_password} onChange={(confirm_password) => setForm({ ...form, confirm_password })} required />
-        <button className="btn modal-submit" type="submit"><LockKeyhole size={18} /> Mettre a jour</button>
+        {feedback && (
+          <div className={`form-feedback ${feedback.type}`}>
+            {feedback.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+            <span>{feedback.message}</span>
+          </div>
+        )}
+        <button className="btn modal-submit" type="submit" disabled={saving}>
+          <LockKeyhole size={18} />
+          {saving ? 'Traitement en cours...' : 'Mettre a jour'}
+        </button>
       </Form>
     </Modal>
   );

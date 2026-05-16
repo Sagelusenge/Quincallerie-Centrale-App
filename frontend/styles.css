@@ -1523,6 +1523,36 @@ body.theme-light .debt-preview {
   width: 100%;
 }
 
+.modal-submit:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.form-feedback {
+  align-items: flex-start;
+  border-radius: 8px;
+  display: flex;
+  gap: 10px;
+  line-height: 1.35;
+  padding: 13px 14px;
+}
+
+.form-feedback.success {
+  background: #d7f7e5;
+  border: 1px solid #a9e8c4;
+  color: #00733f;
+}
+
+.form-feedback.error {
+  background: #ffe4e8;
+  border: 1px solid #ffc7d1;
+  color: #b50012;
+}
+
+.form-feedback span {
+  font-weight: 800;
+}
+
 .confirm-modal {
   max-width: 520px;
 }
