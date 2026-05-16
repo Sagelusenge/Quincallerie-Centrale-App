@@ -3095,18 +3095,83 @@ button.kpi-card {
   }
 
   .sidebar {
-    height: 100vh;
-    min-height: 100vh;
+    height: auto;
+    min-height: 0;
     position: static;
+  }
+
+  .shell:not(.admin-shell) {
+    grid-template-columns: 1fr;
+  }
+
+  .shell:not(.admin-shell) .sidebar {
+    border-bottom: 1px solid #213653;
+    border-right: 0;
+    height: auto;
+    min-height: 0;
+    padding: 16px;
+    position: static;
+  }
+
+  .shell:not(.admin-shell) .brand {
+    margin-bottom: 14px;
+    padding: 0;
+  }
+
+  .shell:not(.admin-shell) .brand strong {
+    font-size: 22px;
+    max-width: none;
   }
 
   .nav {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .shell:not(.admin-shell) .nav {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .shell:not(.admin-shell) .nav button,
+  .shell:not(.admin-shell) .nav-logout {
+    border-left: 0;
+    border-radius: 8px;
+    min-height: 46px;
+    padding: 10px 12px;
+  }
+
+  .shell:not(.admin-shell) .nav button.active {
+    border-left: 0;
+  }
+
+  .shell:not(.admin-shell) .main {
+    padding: 0 18px 28px;
+  }
+
+  .shell:not(.admin-shell) .topbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 14px;
+    margin-inline: -18px;
+    min-height: 0;
+    padding: 16px 18px;
+  }
+
+  .shell:not(.admin-shell) .topbar .search-field {
+    min-width: 0;
+    width: 100%;
+  }
+
   .toolbar {
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: space-between;
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .user-card {
+    min-width: 0;
   }
 
   .admin-shell {
@@ -3181,6 +3246,20 @@ button.kpi-card {
 
   .nav {
     grid-template-columns: 1fr;
+  }
+
+  .shell:not(.admin-shell) .nav {
+    grid-template-columns: 1fr;
+  }
+
+  .shell:not(.admin-shell) .sidebar {
+    padding: 14px;
+  }
+
+  .shell:not(.admin-shell) .nav button,
+  .shell:not(.admin-shell) .nav-logout {
+    font-size: 15px;
+    min-height: 44px;
   }
 
   .panel {
