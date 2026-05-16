@@ -1864,6 +1864,9 @@ function Rapports({ data, searchQuery = '', user }) {
   const top = filterRowsByPeriod(source.top || [], period, ['derniere_visite'])
     .filter((r) => !term || `${r.nom} ${r.postnom || ''}`.toLowerCase().includes(term));
   const caisse = (source.caisse || []).filter((r) => !term || `${r.Date} ${r.Mode_Paiement} ${r.Total_Encaisse}`.toLowerCase().includes(term));
+  const stockValue = stock.reduce((sum, row) => sum + Number(row.valeur_stock_ht || 0), 0);
+  const stockRisks = stock.filter((row) => String(row.statut || '').toUpperCase() !== 'OK').length;
+  const reportTitle = role === 'magasinier' ? 'Rapports produits' : role === 'caissier' ? 'Rapports caisse' : 'Rapports';
   const printRows = (title, headers, rows) => {
     printTableDocument(title, headers, rows, {
       badge: periodLabel(period).toUpperCase(),
@@ -1872,10 +1875,13 @@ function Rapports({ data, searchQuery = '', user }) {
     });
   };
   return (
-    <div className="grid">
+    <div className="grid report-page">
       <div className="panel report-period-panel">
         <div className="panel-heading">
-          <h3>Rapports</h3>
+          <div>
+            <h3>{reportTitle}</h3>
+            <p>Etat de sortie {periodLabel(period).toLowerCase()} pret pour impression.</p>
+          </div>
           <select className="compact-filter" value={period} onChange={(event) => setPeriod(event.target.value)}>
             <option value="journalier">Journalier</option>
             <option value="hebdomadaire">Hebdomadaire</option>
@@ -1889,13 +1895,15 @@ function Rapports({ data, searchQuery = '', user }) {
           {canSalesReports && <Stat label="Creances" value={creances.length} />}
           {canCashReports && <Stat label="Lignes caisse" value={caisse.length} />}
           {canStockReports && <Stat label="Produits en stock" value={stock.length} />}
+          {canStockReports && <Stat label="Valeur stock" value={money(stockValue)} />}
+          {canStockReports && <Stat label="A surveiller" value={stockRisks} />}
         </div>
       </div>
-      {canSalesReports && <div className="panel"><div className="panel-heading"><h3>Creances</h3><button className="btn print" onClick={() => printRows(`Creances - ${period}`, ['Facture', 'Client', 'Du', 'Paye', 'Reste'], creances.map((r) => [r.numero_facture, r.client_nom, money(r.montant_du), money(r.montant_paye), money(r.reste_a_payer)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Facture', 'Client', 'Du', 'Paye', 'Reste']} rows={creances.map((r) => [r.numero_facture, r.client_nom, money(r.montant_du), money(r.montant_paye), money(r.reste_a_payer)])} /></div>}
-      {canSalesReports && <div className="panel"><div className="panel-heading"><h3>Factures</h3><button className="btn print" onClick={() => printRows('Factures', ['Facture', 'Client', 'Montant', 'Reste'], factures.map((r) => [r.numero_facture, `${r.client_nom} ${r.client_postnom || ''}`, money(r.montant_ttc), money(r.reste_a_payer)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Facture', 'Client', 'Montant', 'Reste']} rows={factures.map((r) => [r.numero_facture, `${r.client_nom} ${r.client_postnom || ''}`, money(r.montant_ttc), money(r.reste_a_payer)])} /></div>}
-      {canCashReports && <div className="panel"><div className="panel-heading"><h3>Rapport caisse</h3><button className="btn print" onClick={() => printRows(`Caisse - ${period}`, ['Date', 'Mode', 'Transactions', 'Total'], caisse.map((r) => [r.Date, r.Mode_Paiement, r.Nombre_Transactions, money(r.Total_Encaisse)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Date', 'Mode', 'Transactions', 'Total']} rows={caisse.map((r) => [r.Date, r.Mode_Paiement, r.Nombre_Transactions, money(r.Total_Encaisse)])} /></div>}
-      <div className="grid cols-2">
-        {canStockReports && <div className="panel">
+      {canSalesReports && <div className="panel report-table-panel"><div className="panel-heading"><h3>Creances</h3><button className="btn print" onClick={() => printRows(`Creances - ${period}`, ['Facture', 'Client', 'Du', 'Paye', 'Reste'], creances.map((r) => [r.numero_facture, r.client_nom, money(r.montant_du), money(r.montant_paye), money(r.reste_a_payer)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Facture', 'Client', 'Du', 'Paye', 'Reste']} rows={creances.map((r) => [r.numero_facture, r.client_nom, money(r.montant_du), money(r.montant_paye), money(r.reste_a_payer)])} /></div>}
+      {canSalesReports && <div className="panel report-table-panel"><div className="panel-heading"><h3>Factures</h3><button className="btn print" onClick={() => printRows('Factures', ['Facture', 'Client', 'Montant', 'Reste'], factures.map((r) => [r.numero_facture, `${r.client_nom} ${r.client_postnom || ''}`, money(r.montant_ttc), money(r.reste_a_payer)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Facture', 'Client', 'Montant', 'Reste']} rows={factures.map((r) => [r.numero_facture, `${r.client_nom} ${r.client_postnom || ''}`, money(r.montant_ttc), money(r.reste_a_payer)])} /></div>}
+      {canCashReports && <div className="panel report-table-panel"><div className="panel-heading"><h3>Rapport caisse</h3><button className="btn print" onClick={() => printRows(`Caisse - ${period}`, ['Date', 'Mode', 'Transactions', 'Total'], caisse.map((r) => [r.Date, r.Mode_Paiement, r.Nombre_Transactions, money(r.Total_Encaisse)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Date', 'Mode', 'Transactions', 'Total']} rows={caisse.map((r) => [r.Date, r.Mode_Paiement, r.Nombre_Transactions, money(r.Total_Encaisse)])} /></div>}
+      <div className="grid report-detail-grid">
+        {canStockReports && <div className="panel report-table-panel inventory-panel">
           <div className="panel-heading">
             <h3>Inventaire</h3>
             <button className="btn print" onClick={() => printTableDocument('Fiche de stock', ['Produit', 'Stock', 'Valeur', 'Statut'], stock.map((r) => [r.nom, r.quantite_stock, money(r.valeur_stock_ht), r.statut]), { badge: 'INVENTAIRE', period: 'Inventaire courant', tableTitle: 'Etat du stock' })}><Printer size={18} /> Imprimer</button>
