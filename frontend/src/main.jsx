@@ -1042,20 +1042,30 @@ function Dashboard({ data, searchQuery = '', setPage }) {
         <div className="panel top-clients-panel">
           <h3>Top 3 Clients</h3>
           <div className="top-client-list">
-            {topClients.length ? topClients.map((client, index) => (
-              <article key={`${client.nom}-${index}`}>
-                <div className="client-avatar">{String(client.nom || 'C').charAt(0).toUpperCase()}</div>
-                <div>
-                  <strong>{client.nom} {client.postnom || ''}</strong>
-                  <span>{client.ville || ['Dakar, Senegal', 'Lagos, Nigeria', "Abidjan, Cote d'Ivoire"][index]}</span>
-                </div>
-                <div className="client-spend">
-                  <strong>{formatUsd(client.ca_total)}</strong>
-                  <span>{client.nombre_achats || 0} achats</span>
-                </div>
-                <em>Derniere visite<br />{index === 0 ? "Aujourd'hui" : index === 1 ? 'Hier' : '3 jours'}</em>
-              </article>
-            )) : <div className="empty large">Aucun client classe</div>}
+            {topClients.length ? topClients.map((client, index) => {
+              const achats = Number(client.nombre_achats || 0);
+              return (
+                <article key={`${client.nom}-${index}`}>
+                  <div className="client-avatar">{String(client.nom || 'C').charAt(0).toUpperCase()}</div>
+                  <div>
+                    <strong>{client.nom} {client.postnom || ''}</strong>
+                    <span>{achats} achat{achats > 1 ? 's' : ''} enregistre{achats > 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="client-spend">
+                    <strong>{formatUsd(client.ca_total)}</strong>
+                    <span>Chiffre d'affaires</span>
+                  </div>
+                  <em>
+                    {client.derniere_visite ? (
+                      <>
+                        <small>Derniere facture</small>
+                        {formatDate(client.derniere_visite)}
+                      </>
+                    ) : 'Aucune facture'}
+                  </em>
+                </article>
+              );
+            }) : <div className="empty large">Aucun client classe</div>}
           </div>
           <button className="portfolio-link" type="button" onClick={() => setPage?.('clients')}>Analyse complete du portefeuille <ArrowRight size={20} /></button>
         </div>
