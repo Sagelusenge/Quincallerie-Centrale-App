@@ -581,7 +581,11 @@ function App() {
     utilisateurs: ['Utilisateurs', 'Comptes, roles et acces de votre equipe.'],
     mails: ['Emails', 'Envoyer des notifications et messages clients.'],
     categories: ['Categories', 'Classification simple des produits et services.'],
-    rapports: ['Rapports', 'Factures, creances, stock et meilleurs clients.'],
+    rapports: user?.role === 'magasinier'
+      ? ['Rapports produits', 'Inventaire, stock et approvisionnements.']
+      : user?.role === 'caissier'
+        ? ['Rapports caisse', 'Factures, creances et encaissements.']
+        : ['Rapports', 'Factures, creances, stock et meilleurs clients.'],
     superadmin: ["Vue d'ensemble du reseau", 'Admin > Dashboard Plateforme'],
     'admin-entreprises': ['Entreprises clientes', 'Admin > Entreprises'],
     'admin-abonnements': ['Paiements & abonnements', 'Admin > Abonnements'],
@@ -849,7 +853,7 @@ function Page({ page, api, notify, lang, user, searchQuery, setPage }) {
       const next = { clients: [], produits: [], categories: [], devis: [], ventes: [], extra: {} };
       const tasks = [];
       const adminPages = ['superadmin', 'admin-entreprises', 'admin-abonnements', 'admin-rapports', 'admin-parametres'];
-      if (['clients', 'devis', 'ventes', 'paiements', 'rapports'].includes(page)) tasks.push(api('/clients').then((r) => { next.clients = r.data || []; }));
+      if (['clients', 'devis', 'ventes', 'paiements'].includes(page)) tasks.push(api('/clients').then((r) => { next.clients = r.data || []; }));
       if (['produits', 'categories', 'devis', 'ventes', 'rapports'].includes(page)) tasks.push(api('/produits').then((r) => { next.produits = r.data || []; }));
       if (['produits', 'categories', 'devis', 'ventes'].includes(page)) tasks.push(api('/categories').then((r) => { next.categories = r.data || []; }).catch(() => {}));
       if (page === 'devis') tasks.push(api('/devis').then((r) => { next.devis = r.data || []; }));
