@@ -1225,6 +1225,9 @@ function CreateLauncher({ title, description, buttonLabel, onClick }) {
 function LineEditor({ lignes, setLignes, produits }) {
   const [productQuery, setProductQuery] = useState('');
   const productKey = (produit) => produit?.reference_produit || produit?.id_produit || '';
+  const sortProductsByName = (items) => [...items].sort((a, b) => (
+    `${a.nom || ''} ${a.reference_produit || ''}`.localeCompare(`${b.nom || ''} ${b.reference_produit || ''}`, 'fr', { numeric: true })
+  ));
   const normalizeLines = (nextLines) => {
     const grouped = [];
     nextLines.filter((ligne) => ligne.produit_id).forEach((ligne) => {
@@ -1269,11 +1272,13 @@ function LineEditor({ lignes, setLignes, produits }) {
     });
 
     if (existingIndex >= 0) {
-      setLignes(normalizeLines(activeLines.map((ligne, index) => (
+      const updatedLines = activeLines.map((ligne, index) => (
         index === existingIndex ? { ...ligne, quantite: Number(ligne.quantite || 0) + 1 } : ligne
-      ))));
+      ));
+      const updatedLine = updatedLines[existingIndex];
+      setLignes(normalizeLines([updatedLine, ...updatedLines.filter((_, index) => index !== existingIndex)]));
     } else {
-      setLignes(normalizeLines([...activeLines, { produit_id, quantite: 1 }]));
+      setLignes(normalizeLines([{ produit_id, quantite: 1 }, ...activeLines]));
     }
 
     setProductQuery('');
@@ -1284,10 +1289,10 @@ function LineEditor({ lignes, setLignes, produits }) {
       const produit = produits.find((p) => p.id_produit === ligne.produit_id);
       return productKey(produit) || ligne.produit_id;
     }));
-    return produits.filter((p) => {
+    return sortProductsByName(produits.filter((p) => {
       if (usedKeys.has(productKey(p) || p.id_produit)) return false;
       return !term || `${p.nom} ${p.reference_produit || ''} ${p.categorie_nom || ''}`.toLowerCase().includes(term);
-    });
+    }));
   };
 
   return (
