@@ -3,6 +3,7 @@ export const ensureRuntimeSchema = async (pool) => {
         CREATE TABLE IF NOT EXISTS categorie_produit (
             id_categorie VARCHAR(50) PRIMARY KEY,
             entreprise_id VARCHAR(50) NOT NULL,
+            reference_categorie VARCHAR(50),
             nom VARCHAR(120) NOT NULL,
             description VARCHAR(255),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -116,5 +117,12 @@ export const ensureRuntimeSchema = async (pool) => {
     }
 
     await addColumnIfMissing('produits', 'photo_url', 'TEXT NULL');
+    await addColumnIfMissing('categorie_produit', 'reference_categorie', 'VARCHAR(50) NULL');
     await addColumnIfMissing('categorie_produit', 'photo_url', 'TEXT NULL');
+
+    await pool.query(`
+        UPDATE categorie_produit
+        SET reference_categorie = LEFT(id_categorie, 50)
+        WHERE reference_categorie IS NULL OR reference_categorie = ''
+    `);
 };

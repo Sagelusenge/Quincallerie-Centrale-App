@@ -419,6 +419,7 @@ function App() {
   const [platformSearch, setPlatformSearch] = useState('');
   const [showPasswordSettings, setShowPasswordSettings] = useState(false);
   const [passwordTargetEmail, setPasswordTargetEmail] = useState('');
+  const [selectedNotification, setSelectedNotification] = useState(null);
 
   const notify = (message) => {
     setToast(message);
@@ -556,7 +557,6 @@ function App() {
     setShowNotifications(false);
     const text = `${notification?.titre || ''} ${notification?.message || ''}`;
     const targetEmail = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || '';
-    setPasswordTargetEmail(targetEmail);
     if (notification?.id_notification) {
       api(`/notifications/${notification.id_notification}/read`, { method: 'PUT', body: '{}' })
         .then(() => setNotifications((items) => items.map((item) => (
@@ -564,7 +564,12 @@ function App() {
         ))))
         .catch(() => null);
     }
-    setShowPasswordSettings(true);
+    if (/recuperation|mot de passe|password/i.test(text)) {
+      setPasswordTargetEmail(targetEmail);
+      setShowPasswordSettings(true);
+      return;
+    }
+    setSelectedNotification(notification);
   };
 
   if (!token) {
@@ -635,7 +640,7 @@ function App() {
                     <button className="notification-item" key={n.id_notification} type="button" onClick={() => openNotificationTarget(n)}>
                       <b>{n.titre}</b>
                       <span>{n.message}</span>
-                      <small>Reconfigurer le mot de passe</small>
+                      <small>{/recuperation|mot de passe|password/i.test(`${n.titre} ${n.message}`) ? 'Reconfigurer le mot de passe' : formatDate(n.created_at)}</small>
                     </button>
                   ))}
                 </div>
@@ -663,6 +668,14 @@ function App() {
       </main>
       {showPasswordSettings && (
         <PasswordSettings api={api} notify={notify} user={user} targetEmail={passwordTargetEmail} isSuperAdmin={isSuperAdmin} onClose={() => { setShowPasswordSettings(false); setPasswordTargetEmail(''); }} />
+      )}
+      {selectedNotification && (
+        <Modal title={selectedNotification.titre || 'Notification'} onClose={() => setSelectedNotification(null)}>
+          <div className="notification-detail">
+            <p>{selectedNotification.message}</p>
+            <small>{formatDate(selectedNotification.created_at)}</small>
+          </div>
+        </Modal>
       )}
       {toast && <div className="toast">{toast}</div>}
     </div>
@@ -2128,19 +2141,21 @@ function Utilisateurs({ api, notify, data, submit, user, searchQuery = '' }) {
 function Mails({ api, notify, data, submit, user, searchQuery = '' }) {
   const status = data.extra.mailStatus || {};
   const [form, setForm] = useState({ to: '', subject: '', message: '' });
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(null);
   const [query, setQuery] = useState('');
   const term = `${searchQuery} ${query}`.trim().toLowerCase();
   const messages = (data.extra.mailMessages || []).filter((row) => `${row.to_email || ''} ${row.sender_email || ''} ${row.subject || ''} ${row.status || ''}`.toLowerCase().includes(term));
+  const isTeamNotification = creating === 'team';
 
   return (
     <div className="grid">
       <div className="panel">
         <div className="panel-heading client-toolbar">
-          <h3>Emails envoyes</h3>
+          <h3>Communications envoyees</h3>
           <div className="actions">
             <SearchInput value={query} onChange={setQuery} placeholder="Rechercher email" />
-            <button className="btn small" type="button" onClick={() => setCreating(true)}><Plus size={16} /> Nouveau message</button>
+            <button className="btn secondary small" type="button" onClick={() => setCreating('team')}><Bell size={16} /> Message equipe</button>
+            <button className="btn small" type="button" onClick={() => setCreating('email')}><Plus size={16} /> Nouveau message</button>
           </div>
         </div>
         <div className="email-card-list">
@@ -2154,7 +2169,7 @@ function Mails({ api, notify, data, submit, user, searchQuery = '' }) {
               </div>
               <Badge>{row.status || 'envoye'}</Badge>
             </article>
-          )) : <div className="empty large">Aucun email envoye</div>}
+          )) : <div className="empty large">Aucune communication envoyee</div>}
         </div>
       </div>
       <div className="panel">
@@ -2166,23 +2181,30 @@ function Mails({ api, notify, data, submit, user, searchQuery = '' }) {
         </div>
       </div>
       {creating && (
-        <Modal title="Nouveau message" onClose={() => setCreating(false)}>
+        <Modal title={isTeamNotification ? "Message a toute l'equipe" : 'Nouveau message'} onClose={() => setCreating(null)}>
           <Form onSubmit={() => submit(async () => {
-            await api('/mail/send', { method: 'POST', body: JSON.stringify(form) });
+            const response = await api(isTeamNotification ? '/mail/notify-team' : '/mail/send', { method: 'POST', body: JSON.stringify(form) });
             setForm({ to: '', subject: '', message: '' });
-            setCreating(false);
-            notify('Email envoye');
+            setCreating(null);
+            notify(response.message || (isTeamNotification ? 'Notification equipe envoyee' : 'Email envoye'));
           })}>
             <div className="debt-preview">
               <span>Expediteur</span>
               <strong>{user?.email || 'Utilisateur en cours'}</strong>
             </div>
-            <Input label="Destinataire" type="email" value={form.to} onChange={(to) => setForm({ ...form, to })} required />
+            {isTeamNotification ? (
+              <div className="debt-preview">
+                <span>Destination</span>
+                <strong>Tous les utilisateurs actifs de l'entreprise</strong>
+              </div>
+            ) : (
+              <Input label="Destinataire" type="email" value={form.to} onChange={(to) => setForm({ ...form, to })} required />
+            )}
             <Input label="Sujet" value={form.subject} onChange={(subject) => setForm({ ...form, subject })} required />
             <label>Message
               <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} required />
             </label>
-            <button className="btn modal-submit"><Mail size={18} /> Envoyer</button>
+            <button className="btn modal-submit">{isTeamNotification ? <Bell size={18} /> : <Mail size={18} />} Envoyer</button>
           </Form>
         </Modal>
       )}
@@ -2191,13 +2213,13 @@ function Mails({ api, notify, data, submit, user, searchQuery = '' }) {
 }
 
 function Categories({ api, notify, data, submit, searchQuery = '' }) {
-  const emptyCategoryForm = { nom: '', description: '', photo_url: '' };
+  const emptyCategoryForm = { reference_categorie: '', nom: '', description: '', photo_url: '' };
   const [form, setForm] = useState(emptyCategoryForm);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
   const [query, setQuery] = useState('');
   const term = `${searchQuery} ${query}`.trim().toLowerCase();
-  const categories = data.categories.filter((c) => `${c.nom} ${c.description || ''}`.toLowerCase().includes(term));
+  const categories = data.categories.filter((c) => `${c.reference_categorie || ''} ${c.nom} ${c.description || ''}`.toLowerCase().includes(term));
   const save = () => submit(async () => {
     await api('/categories', { method: 'POST', body: JSON.stringify(form) });
     setForm(emptyCategoryForm);
@@ -2248,6 +2270,7 @@ function Categories({ api, notify, data, submit, searchQuery = '' }) {
                     <img src={c.photo_url || imageForIndex(index + 2)} alt="" />
                   </div>
                   <strong>{c.nom}</strong>
+                  <em>Ref. {c.reference_categorie || c.id_categorie}</em>
                   <p>{c.description || 'Aucune description'}</p>
                   <span>{c.total_produits || 0} produits</span>
                   <RowActions onEdit={() => setEditing(c)} onDelete={() => remove(c)} />
@@ -2260,6 +2283,7 @@ function Categories({ api, notify, data, submit, searchQuery = '' }) {
       {creating && (
         <Modal title="Nouvelle categorie" onClose={() => setCreating(false)}>
           <Form onSubmit={save}>
+            <Input label="Reference" value={form.reference_categorie} onChange={(reference_categorie) => setForm({ ...form, reference_categorie })} placeholder="ex: CAT-VIVRE" />
             <Input label="Nom" value={form.nom} onChange={(nom) => setForm({ ...form, nom })} required />
             <Input label="Description" value={form.description} onChange={(description) => setForm({ ...form, description })} />
             <PhotoInput label="Photo de la categorie" value={form.photo_url} onChange={(photo_url) => setForm({ ...form, photo_url })} />
@@ -2270,6 +2294,7 @@ function Categories({ api, notify, data, submit, searchQuery = '' }) {
       {editing && (
         <Modal title="Modifier categorie" onClose={() => setEditing(null)}>
           <Form onSubmit={saveEdit}>
+            <Input label="Reference" value={editing.reference_categorie || ''} onChange={(reference_categorie) => setEditing({ ...editing, reference_categorie })} />
             <Input label="Nom" value={editing.nom || ''} onChange={(nom) => setEditing({ ...editing, nom })} required />
             <Input label="Description" value={editing.description || ''} onChange={(description) => setEditing({ ...editing, description })} />
             <PhotoInput label="Photo de la categorie" value={editing.photo_url || ''} onChange={(photo_url) => setEditing({ ...editing, photo_url })} />

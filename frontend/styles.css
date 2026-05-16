@@ -289,6 +289,25 @@ body.theme-light .topbar {
   margin: 0;
 }
 
+.notification-detail {
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  line-height: 1.6;
+  padding: 18px;
+}
+
+.notification-detail p {
+  margin: 0;
+}
+
+.notification-detail small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
 .icon-button,
 .language-button {
   align-items: center;
@@ -3005,6 +3024,12 @@ button.kpi-card {
   color: #0057a8;
   font-size: 20px;
   line-height: 1.25;
+}
+
+.category-rank-card em {
+  color: #667085;
+  font-style: normal;
+  font-weight: 800;
 }
 
 .category-rank-card p {

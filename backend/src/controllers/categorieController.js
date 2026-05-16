@@ -1,5 +1,19 @@
 import pool from '../config/db.js';
 
+const sanitizeReference = (value) => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^A-Z0-9-]/g, '')
+    .slice(0, 50);
+
+const buildReference = (nom) => {
+    const base = sanitizeReference(nom).slice(0, 12) || 'CATEGORIE';
+    return `CAT-${base}-${String(Date.now()).slice(-5)}`.slice(0, 50);
+};
+
 export const getCategories = async (req, res) => {
     try {
         const [rows] = await pool.query(
@@ -28,14 +42,15 @@ export const createCategorie = async (req, res) => {
 
     try {
         const id_categorie = `CAT-${Date.now()}-${entreprise_id.slice(0, 8)}`;
+        const reference_categorie = sanitizeReference(req.body.reference_categorie) || buildReference(nom);
 
         await pool.query(
-            `INSERT INTO categorie_produit (id_categorie, entreprise_id, nom, description, photo_url)
-             VALUES (?, ?, ?, ?, ?)`,
-            [id_categorie, entreprise_id, nom, description || null, photo_url || null]
+            `INSERT INTO categorie_produit (id_categorie, entreprise_id, reference_categorie, nom, description, photo_url)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [id_categorie, entreprise_id, reference_categorie, nom, description || null, photo_url || null]
         );
 
-        res.status(201).json({ success: true, message: 'Categorie creee', data: { id_categorie, nom, description, photo_url } });
+        res.status(201).json({ success: true, message: 'Categorie creee', data: { id_categorie, reference_categorie, nom, description, photo_url } });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -50,10 +65,11 @@ export const updateCategorie = async (req, res) => {
     }
 
     try {
+        const reference_categorie = sanitizeReference(req.body.reference_categorie) || buildReference(nom);
         const [result] = await pool.query(
-            `UPDATE categorie_produit SET nom = ?, description = ?, photo_url = ?
+            `UPDATE categorie_produit SET reference_categorie = ?, nom = ?, description = ?, photo_url = ?
              WHERE id_categorie = ? AND entreprise_id = ?`,
-            [nom, description || null, photo_url || null, id, req.user.entreprise_id]
+            [reference_categorie, nom, description || null, photo_url || null, id, req.user.entreprise_id]
         );
 
         if (result.affectedRows === 0) {

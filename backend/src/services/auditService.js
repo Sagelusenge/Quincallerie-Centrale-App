@@ -42,6 +42,7 @@ const getActionLabel = (method, path) => {
     if (path.includes('/change-password')) return 'a change son mot de passe';
     if (path.includes('/reset-request-password')) return 'a reinitialise un mot de passe utilisateur';
     if (path.includes('/abonnement')) return 'a modifie un abonnement';
+    if (path.includes('/mail/notify-team')) return 'a envoye une notification a toute l equipe';
     if (path.includes('/mail/send')) return 'a envoye un email';
 
     const moduleLabels = {

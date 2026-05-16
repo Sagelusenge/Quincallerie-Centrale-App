@@ -80,3 +80,85 @@ export const sendCustomMail = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+export const sendTeamNotification = async (req, res) => {
+    const { subject, message } = req.body;
+    const entreprise_id = req.user?.entreprise_id;
+
+    if (!entreprise_id) {
+        return res.status(400).json({
+            success: false,
+            message: 'Entreprise introuvable pour envoyer une notification interne.'
+        });
+    }
+
+    if (!subject || !message) {
+        return res.status(400).json({
+            success: false,
+            message: 'Sujet et message requis'
+        });
+    }
+
+    const connection = await pool.getConnection();
+
+    try {
+        const [users] = await connection.query(
+            `SELECT id_utilisateur
+             FROM utilisateur
+             WHERE entreprise_id = ? AND actif = 1`,
+            [entreprise_id]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Aucun utilisateur actif trouve dans cette entreprise.'
+            });
+        }
+
+        await connection.beginTransaction();
+
+        const notificationRows = users.map((item) => [
+            'user',
+            item.id_utilisateur,
+            entreprise_id,
+            subject,
+            message
+        ]);
+
+        await connection.query(
+            `INSERT INTO notifications
+                (recipient_type, recipient_user_id, entreprise_id, titre, message)
+             VALUES ?`,
+            [notificationRows]
+        );
+
+        await connection.query(
+            `INSERT INTO mail_messages
+                (entreprise_id, user_id, sender_email, to_email, subject, message, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [
+                entreprise_id,
+                req.user?.id || null,
+                req.user?.email || process.env.EMAIL_USER || null,
+                'Tous les utilisateurs',
+                subject,
+                message,
+                'notification'
+            ]
+        );
+
+        await connection.commit();
+
+        res.json({
+            success: true,
+            message: `Notification envoyee a ${users.length} utilisateur(s).`,
+            data: { recipients: users.length }
+        });
+    } catch (error) {
+        await connection.rollback();
+        res.status(500).json({ success: false, message: error.message });
+    } finally {
+        connection.release();
+    }
+};
