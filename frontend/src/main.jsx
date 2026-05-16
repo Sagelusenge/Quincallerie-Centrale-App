@@ -15,7 +15,6 @@ import {
   Edit3,
   Eye,
   FileText,
-  Gauge,
   Grid2X2,
   LockKeyhole,
   LogOut,
@@ -28,7 +27,6 @@ import {
   Printer,
   Search,
   Settings,
-  ShieldCheck,
   ShoppingCart,
   SlidersHorizontal,
   SunMedium,
@@ -718,31 +716,15 @@ function Login({ onLogin, notify, toast }) {
 
   return (
     <main className="login-page">
-      <section className="login-hero">
-        <div className="login-hero-content">
-          <div className="login-hero-brand">
-            <Briefcase size={58} />
-            <strong>CRM PME</strong>
-          </div>
-          <h1>Optimisez la gestion de votre PME avec une solution de confiance.</h1>
-          <p>La plateforme tout-en-un concue pour les entrepreneurs africains. Gerez vos clients, stocks et facturations en toute simplicite.</p>
-          <div className="login-benefits">
-            <div>
-              <ShieldCheck size={24} />
-              <span><strong>Securise</strong><small>Infrastructure robuste</small></span>
-            </div>
-            <div>
-              <Gauge size={24} />
-              <span><strong>Performance</strong><small>Temps reel</small></span>
-            </div>
-          </div>
-        </div>
-        <div className="login-hero-footer">
-          <span>PME SOLUTIONS</span>
-        </div>
-      </section>
       <section className="login-panel">
         <div className="login-box">
+          <div className="login-card-brand">
+            <Briefcase size={36} />
+            <div>
+              <strong>CRM PME</strong>
+              <span>PME Solutions</span>
+            </div>
+          </div>
           <h2>Bienvenue</h2>
           <p>Connectez-vous pour acceder a votre espace de gestion.</p>
           <form className="form" onSubmit={submit}>

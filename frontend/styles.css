@@ -992,12 +992,15 @@ textarea:focus {
 }
 
 .login-page {
-  align-items: stretch;
-  background: #f7f7fb;
+  align-items: center;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(0, 39, 97, 0.08), transparent 26%),
+    radial-gradient(circle at 88% 82%, rgba(255, 174, 43, 0.11), transparent 28%),
+    #f7f7fb;
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(480px, 0.95fr);
-  justify-content: stretch;
-  padding: 0;
+  justify-items: center;
+  min-height: 100vh;
+  padding: 28px;
 }
 
 .login-hero {
@@ -1116,34 +1119,73 @@ textarea:focus {
 
 .login-panel {
   align-items: center;
-  background: #f7f7fb;
+  background: transparent;
   border: 0;
   border-radius: 0;
   box-shadow: none;
   display: grid;
   justify-items: center;
   max-width: none;
-  min-height: 100vh;
-  padding: 72px 78px 34px;
+  min-height: auto;
+  padding: 0;
   position: relative;
+  width: 100%;
 }
 
 .login-box {
-  max-width: 500px;
+  background: #fff;
+  border: 1px solid #c5cad6;
+  border-radius: 8px;
+  box-shadow: 0 28px 80px rgba(5, 13, 32, 0.13);
+  max-width: 520px;
+  padding: 34px 40px;
+  width: 100%;
+}
+
+.login-card-brand {
+  align-items: center;
+  border-bottom: 1px solid #d9dce5;
+  display: flex;
+  gap: 14px;
+  margin-bottom: 28px;
+  padding-bottom: 22px;
+}
+
+.login-card-brand svg {
+  color: #ffae2b;
+}
+
+.login-card-brand strong,
+.login-card-brand span {
+  display: block;
+}
+
+.login-card-brand strong {
+  color: #000c3d;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.login-card-brand span {
+  color: #6f7480;
+  font-weight: 800;
+  margin-top: 2px;
 }
 
 .login-box h2 {
   color: #1c1f29;
-  font-size: 22px;
-  font-weight: 500;
-  margin-bottom: 14px;
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 10px;
+  text-align: center;
 }
 
 .login-box p {
   color: #2f3441;
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1.35;
-  margin-bottom: 56px;
+  margin-bottom: 34px;
+  text-align: center;
 }
 
 .login-box .form {
