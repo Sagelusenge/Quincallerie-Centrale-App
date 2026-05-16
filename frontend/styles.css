@@ -2873,6 +2873,23 @@ button.kpi-card {
   min-width: 650px;
 }
 
+.history-actions {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.history-actions .btn {
+  border-radius: 4px;
+  min-height: 50px;
+}
+
+.history-actions .btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .category-market {
   padding: 26px;
 }
@@ -3457,6 +3474,10 @@ button.kpi-card {
   .user-profile-meta {
     grid-column: 1 / -1;
     justify-content: flex-start;
+  }
+
+  .history-actions {
+    grid-template-columns: 1fr;
   }
 
   .category-rank-list,

@@ -1971,6 +1971,46 @@ function Utilisateurs({ api, notify, data, submit, user, searchQuery = '' }) {
       setHistoryLoading(false);
     }
   };
+  const printUserTraffic = () => {
+    if (!historyUser) return;
+    printLayout({
+      title: `Trafic utilisateur - ${historyUser.nom}`,
+      badge: historyUser.role,
+      sections: [
+        {
+          title: 'Utilisateur',
+          rows: [
+            ['Nom', historyUser.nom],
+            ['Email', historyUser.email],
+            ['Role', historyUser.role],
+            ['Statut', historyUser.actif ? 'Actif' : 'Suspendu']
+          ]
+        },
+        {
+          title: 'Controle',
+          rows: [
+            ['Actions', historyLogs.length],
+            ['Date impression', new Date().toLocaleString('fr-FR')],
+            ['Visibilite', "Admin uniquement"]
+          ]
+        }
+      ],
+      table: {
+        title: 'Journal des actions',
+        headers: ['Date et heure', 'Utilisateur', 'Action', 'Module', 'Reference'],
+        rows: historyLogs.map((log) => [
+          formatLogDate(log.created_at),
+          `${log.user_name || historyUser.nom} (${log.user_role || historyUser.role})`,
+          log.description,
+          moduleLabels[log.module] || log.module || '-',
+          log.entity_id || '-'
+        ])
+      },
+      note: "Ce document reprend le trafic applicatif enregistre pour l'utilisateur selectionne.",
+      paper: 'page',
+      generatedLine: `Trafic imprime par ${user?.nom || user?.email || 'admin'}`
+    });
+  };
   const create = () => submit(async () => {
     await api('/utilisateurs', { method: 'POST', body: JSON.stringify(form) });
     setForm({ nom: '', email: '', mot_de_passe: 'User@123', role: 'caissier' });
@@ -2075,7 +2115,10 @@ function Utilisateurs({ api, notify, data, submit, user, searchQuery = '' }) {
               ])} />
             )}
           </div>
-          <button className="btn modal-submit" type="button" onClick={() => toggle(historyUser)}>Changer statut</button>
+          <div className="history-actions">
+            <button className="btn secondary" type="button" onClick={printUserTraffic} disabled={historyLoading || !historyLogs.length}><Printer size={18} /> Imprimer trafic</button>
+            <button className="btn" type="button" onClick={() => toggle(historyUser)}>Changer statut</button>
+          </div>
         </Modal>
       )}
     </div>
