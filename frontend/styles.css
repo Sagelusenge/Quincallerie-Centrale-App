@@ -722,13 +722,20 @@ tr:last-child td {
   border-radius: 8px;
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   padding: 12px;
 }
 
 .quote-product-picker input,
 .quote-product-picker select {
   min-width: 0;
+}
+
+.quote-product-picker span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 800;
+  grid-column: 1 / -1;
 }
 
 .quote-line-list {

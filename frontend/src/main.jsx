@@ -1224,7 +1224,6 @@ function CreateLauncher({ title, description, buttonLabel, onClick }) {
 
 function LineEditor({ lignes, setLignes, produits }) {
   const [productQuery, setProductQuery] = useState('');
-  const [selectedProductId, setSelectedProductId] = useState('');
   const productKey = (produit) => produit?.reference_produit || produit?.id_produit || '';
   const normalizeLines = (nextLines) => {
     const grouped = [];
@@ -1253,16 +1252,17 @@ function LineEditor({ lignes, setLignes, produits }) {
   }, [lignes, produits]);
 
   const updateQuantity = (produit_id, quantite) => {
+    const safeQuantity = Math.max(1, Number(quantite || 1));
     setLignes(normalizeLines(activeLines.map((ligne) => (
-      ligne.produit_id === produit_id ? { ...ligne, quantite } : ligne
+      ligne.produit_id === produit_id ? { ...ligne, quantite: safeQuantity } : ligne
     ))));
   };
   const remove = (produit_id) => setLignes(normalizeLines(activeLines.filter((ligne) => ligne.produit_id !== produit_id)));
-  const addProduct = () => {
-    if (!selectedProductId) return;
+  const addProduct = (produit_id) => {
+    if (!produit_id) return;
 
-    const selectedProduct = produits.find((p) => p.id_produit === selectedProductId);
-    const selectedKey = productKey(selectedProduct) || selectedProductId;
+    const selectedProduct = produits.find((p) => p.id_produit === produit_id);
+    const selectedKey = productKey(selectedProduct) || produit_id;
     const existingIndex = activeLines.findIndex((ligne) => {
       const produit = produits.find((p) => p.id_produit === ligne.produit_id);
       return (productKey(produit) || ligne.produit_id) === selectedKey;
@@ -1273,10 +1273,9 @@ function LineEditor({ lignes, setLignes, produits }) {
         index === existingIndex ? { ...ligne, quantite: Number(ligne.quantite || 0) + 1 } : ligne
       ))));
     } else {
-      setLignes(normalizeLines([...activeLines, { produit_id: selectedProductId, quantite: 1 }]));
+      setLignes(normalizeLines([...activeLines, { produit_id, quantite: 1 }]));
     }
 
-    setSelectedProductId('');
     setProductQuery('');
   };
   const availableProducts = () => {
@@ -1300,11 +1299,11 @@ function LineEditor({ lignes, setLignes, produits }) {
           onChange={(event) => setProductQuery(event.target.value)}
           placeholder="Rechercher produit, reference ou categorie"
         />
-        <select value={selectedProductId} onChange={(event) => setSelectedProductId(event.target.value)}>
-          <option value="">Selectionner un produit</option>
+        <select value="" onChange={(event) => addProduct(event.target.value)}>
+          <option value="">Choisir un produit a ajouter</option>
           {availableProducts().map((p) => <option key={p.id_produit} value={p.id_produit}>{p.nom} - {money(p.prix_ht)}</option>)}
         </select>
-        <button className="btn secondary small" type="button" onClick={addProduct}><Plus size={16} /> Ajouter</button>
+        <span>{availableProducts().length} produit{availableProducts().length > 1 ? 's' : ''} disponible{availableProducts().length > 1 ? 's' : ''}</span>
       </div>
       <div className="quote-line-list">
       {activeLines.length ? activeLines.map((ligne, index) => {
@@ -1317,7 +1316,7 @@ function LineEditor({ lignes, setLignes, produits }) {
               <em>{money(selectedProduct?.prix_ht || 0)}</em>
             </div>
             <div className="line-qty">
-              <Input label="Quantite" type="number" value={ligne.quantite} onChange={(quantite) => updateQuantity(ligne.produit_id, quantite)} />
+              <Input label="Quantite" type="number" min="1" value={ligne.quantite} onChange={(quantite) => updateQuantity(ligne.produit_id, quantite)} />
               <button className="action delete" type="button" onClick={() => remove(ligne.produit_id)} title="Supprimer ligne"><Trash2 size={16} /></button>
             </div>
           </div>
@@ -1331,7 +1330,7 @@ function LineEditor({ lignes, setLignes, produits }) {
 function quoteTotal(lignes, produits) {
   return lignes.reduce((total, ligne) => {
     const produit = produits.find((p) => p.id_produit === ligne.produit_id);
-    return total + (Number(produit?.prix_ht || 0) * Number(ligne.quantite || 0));
+    return total + (Number(produit?.prix_ht || 0) * Math.max(0, Number(ligne.quantite || 0)));
   }, 0);
 }
 
@@ -1640,7 +1639,7 @@ function Devis({ api, notify, data, submit, searchQuery = '' }) {
   };
   const buildLignes = (lignes) => lignes.filter((ligne) => ligne.produit_id).map((ligne) => {
     const produit = data.produits.find((p) => p.id_produit === ligne.produit_id);
-    return { produit_id: ligne.produit_id, quantite: Number(ligne.quantite), prix_unitaire_ht: Number(produit?.prix_ht || 0) };
+    return { produit_id: ligne.produit_id, quantite: Math.max(1, Number(ligne.quantite || 1)), prix_unitaire_ht: Number(produit?.prix_ht || 0) };
   });
   const saveEdit = () => submit(async () => {
     const lignes = buildLignes(editing.lignes);
@@ -1750,7 +1749,7 @@ function Ventes({ api, notify, data, submit, searchQuery = '' }) {
     });
   };
   const saveEdit = () => submit(async () => {
-    const articles = editing.lignes.filter((ligne) => ligne.produit_id).map((ligne) => ({ produit_id: ligne.produit_id, quantite: Number(ligne.quantite) }));
+    const articles = editing.lignes.filter((ligne) => ligne.produit_id).map((ligne) => ({ produit_id: ligne.produit_id, quantite: Math.max(1, Number(ligne.quantite || 1)) }));
     if (articles.length === 0) {
       notify('Selectionnez au moins un produit.');
       return;
@@ -1804,7 +1803,7 @@ function Ventes({ api, notify, data, submit, searchQuery = '' }) {
       {creating && (
         <Modal title="Vente directe" onClose={() => setCreating(false)}>
           <Form onSubmit={() => submit(async () => {
-            const articles = form.lignes.filter((ligne) => ligne.produit_id).map((ligne) => ({ produit_id: ligne.produit_id, quantite: Number(ligne.quantite) }));
+            const articles = form.lignes.filter((ligne) => ligne.produit_id).map((ligne) => ({ produit_id: ligne.produit_id, quantite: Math.max(1, Number(ligne.quantite || 1)) }));
             if (articles.length === 0) {
               notify('Selectionnez au moins un produit.');
               return;
@@ -2766,8 +2765,8 @@ function Modal({ title, children, onClose, className = '' }) {
   );
 }
 
-function Input({ label, value, onChange, type = 'text', required = false }) {
-  return <label>{label}<input type={type} value={value} onChange={(e) => onChange(e.target.value)} required={required} /></label>;
+function Input({ label, value, onChange, type = 'text', required = false, ...props }) {
+  return <label>{label}<input type={type} value={value} onChange={(e) => onChange(e.target.value)} required={required} {...props} /></label>;
 }
 
 function PhotoInput({ label, value, onChange }) {
