@@ -42,6 +42,24 @@ export const ensureRuntimeSchema = async (pool) => {
         )
     `);
 
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS user_activity_logs (
+            id_log INT AUTO_INCREMENT PRIMARY KEY,
+            entreprise_id VARCHAR(50) NOT NULL,
+            user_id VARCHAR(50) NOT NULL,
+            user_name VARCHAR(160),
+            user_role VARCHAR(50),
+            action_type VARCHAR(30) NOT NULL,
+            module VARCHAR(80),
+            entity_id VARCHAR(80),
+            description VARCHAR(255) NOT NULL,
+            metadata JSON NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_activity_entreprise_date (entreprise_id, created_at),
+            INDEX idx_activity_user_date (user_id, created_at)
+        )
+    `);
+
     const addColumnIfMissing = async (table, column, definition) => {
         const [rows] = await pool.query(
             `SELECT COLUMN_NAME
@@ -73,6 +91,17 @@ export const ensureRuntimeSchema = async (pool) => {
     await addColumnIfMissing('mail_messages', 'message', 'TEXT NULL');
     await addColumnIfMissing('mail_messages', 'status', 'VARCHAR(40) NOT NULL DEFAULT "envoye"');
     await addColumnIfMissing('mail_messages', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+
+    await addColumnIfMissing('user_activity_logs', 'entreprise_id', 'VARCHAR(50) NOT NULL');
+    await addColumnIfMissing('user_activity_logs', 'user_id', 'VARCHAR(50) NOT NULL');
+    await addColumnIfMissing('user_activity_logs', 'user_name', 'VARCHAR(160) NULL');
+    await addColumnIfMissing('user_activity_logs', 'user_role', 'VARCHAR(50) NULL');
+    await addColumnIfMissing('user_activity_logs', 'action_type', 'VARCHAR(30) NOT NULL DEFAULT "ACTION"');
+    await addColumnIfMissing('user_activity_logs', 'module', 'VARCHAR(80) NULL');
+    await addColumnIfMissing('user_activity_logs', 'entity_id', 'VARCHAR(80) NULL');
+    await addColumnIfMissing('user_activity_logs', 'description', 'VARCHAR(255) NOT NULL DEFAULT "Action utilisateur"');
+    await addColumnIfMissing('user_activity_logs', 'metadata', 'JSON NULL');
+    await addColumnIfMissing('user_activity_logs', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
 
     const [productColumns] = await pool.query(`
         SELECT COLUMN_NAME

@@ -2612,6 +2612,24 @@ button.kpi-card {
   margin-bottom: 16px;
 }
 
+.audit-history {
+  border: 1px solid #c5cad6;
+  border-radius: 8px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.audit-history .panel-heading {
+  border-bottom: 1px solid #d8dce5;
+  padding: 18px 22px;
+}
+
+.audit-history .table-wrap {
+  border: 0;
+  max-height: 360px;
+  overflow: auto;
+}
+
 .category-market {
   padding: 26px;
 }

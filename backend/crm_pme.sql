@@ -39,6 +39,22 @@ CREATE TABLE utilisateur (
     FOREIGN KEY (entreprise_id) REFERENCES entreprise(id_entreprise) ON DELETE CASCADE
 );
 
+CREATE TABLE user_activity_logs (
+    id_log INT AUTO_INCREMENT PRIMARY KEY,
+    entreprise_id VARCHAR(50) NOT NULL,
+    user_id VARCHAR(50) NOT NULL,
+    user_name VARCHAR(160),
+    user_role VARCHAR(50),
+    action_type VARCHAR(30) NOT NULL,
+    module VARCHAR(80),
+    entity_id VARCHAR(80),
+    description VARCHAR(255) NOT NULL,
+    metadata JSON NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_activity_entreprise_date (entreprise_id, created_at),
+    INDEX idx_activity_user_date (user_id, created_at)
+);
+
 CREATE TABLE client (
     id_client VARCHAR(50) PRIMARY KEY,
     nom VARCHAR(100) NOT NULL,

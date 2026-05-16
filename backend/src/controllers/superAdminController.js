@@ -404,6 +404,7 @@ export const supprimerEntreprise = async (req, res) => {
         await deleteFromTableIfExists(connection, 'categorie_produit', 'DELETE FROM categorie_produit WHERE entreprise_id = ?', [id]);
         await connection.query('DELETE FROM client WHERE entreprise_id = ?', [id]);
         await deleteFromTableIfExists(connection, 'mail_messages', 'DELETE FROM mail_messages WHERE entreprise_id = ?', [id]);
+        await deleteFromTableIfExists(connection, 'user_activity_logs', 'DELETE FROM user_activity_logs WHERE entreprise_id = ?', [id]);
         await deleteFromTableIfExists(connection, 'notifications', 'DELETE FROM notifications WHERE entreprise_id = ?', [id]);
         await deleteFromTableIfExists(connection, 'demandes_abonnement', 'DELETE FROM demandes_abonnement WHERE entreprise_id = ?', [id]);
         await connection.query('DELETE FROM utilisateur WHERE entreprise_id = ?', [id]);

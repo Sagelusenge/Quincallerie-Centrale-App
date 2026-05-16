@@ -3,6 +3,7 @@ import {
     getAllUtilisateurs,
     createUtilisateur,
     updateUtilisateur,
+    getHistoriqueUtilisateur,
     toggleUtilisateur,
     deleteUtilisateur
 } from '../controllers/utilisateurController.js';
@@ -21,6 +22,12 @@ router.post('/',
     protect,
     authorizeRoles('manager'),
     createUtilisateur
+);
+
+router.get('/:id/historique',
+    protect,
+    authorizeRoles('manager'),
+    getHistoriqueUtilisateur
 );
 
 router.put('/:id',

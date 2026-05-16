@@ -1865,10 +1865,48 @@ function Utilisateurs({ api, notify, data, submit, searchQuery = '' }) {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
   const [historyUser, setHistoryUser] = useState(null);
+  const [historyLogs, setHistoryLogs] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [query, setQuery] = useState('');
   const roles = [['manager', 'Manager'], ['caissier', 'Caissier'], ['magasinier', 'Magasinier']];
   const term = `${searchQuery} ${query}`.trim().toLowerCase();
   const users = (data.extra.utilisateurs || []).filter((u) => `${u.nom} ${u.email} ${u.role}`.toLowerCase().includes(term));
+  const moduleLabels = {
+    clients: 'Clients',
+    produits: 'Produits',
+    categories: 'Categories',
+    devis: 'Devis',
+    ventes: 'Factures',
+    paiements: 'Paiements',
+    utilisateurs: 'Utilisateurs',
+    auth: 'Compte',
+    mail: 'Emails',
+    'super-admin': 'Super admin'
+  };
+  const formatLogDate = (value) => {
+    if (!value) return '-';
+    return new Intl.DateTimeFormat('fr-FR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date(value));
+  };
+  const openHistory = async (user) => {
+    setHistoryUser(user);
+    setHistoryLogs([]);
+    setHistoryLoading(true);
+    try {
+      const result = await api(`/utilisateurs/${user.id_utilisateur}/historique`);
+      setHistoryUser(result.data?.utilisateur || user);
+      setHistoryLogs(result.data?.historique || []);
+    } catch (error) {
+      notify(error.message);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
   const create = () => submit(async () => {
     await api('/utilisateurs', { method: 'POST', body: JSON.stringify(form) });
     setForm({ nom: '', email: '', mot_de_passe: 'User@123', role: 'caissier' });
@@ -1910,7 +1948,7 @@ function Utilisateurs({ api, notify, data, submit, searchQuery = '' }) {
           <RowActions
             onEdit={() => setEditing({ ...u, mot_de_passe: '' })}
             onPrint={() => printDocument('Utilisateur', [['Nom', u.nom], ['Email', u.email], ['Role', u.role], ['Statut', u.actif ? 'actif' : 'suspendu']], { paper: 'page' })}
-            onToggle={() => setHistoryUser(u)}
+            onToggle={() => openHistory(u)}
             toggleLabel="Vision et historique"
             onDelete={() => remove(u)}
           />
@@ -1945,7 +1983,23 @@ function Utilisateurs({ api, notify, data, submit, searchQuery = '' }) {
             <Stat label="Statut" value={historyUser.actif ? 'Actif' : 'Suspendu'} />
             <Stat label="Email" value={historyUser.email} />
           </div>
-          <div className="notice">Le journal detaille des actions sera alimente par le module de notification et d'audit applicatif.</div>
+          <div className="audit-history">
+            <div className="panel-heading">
+              <h3>Journal des actions</h3>
+              <span className="panel-pill">Visible par l'admin</span>
+            </div>
+            {historyLoading ? (
+              <div className="empty">Chargement de l'historique...</div>
+            ) : (
+              <Table headers={['Date et heure', 'Utilisateur', 'Action', 'Module', 'Reference']} rows={historyLogs.map((log) => [
+                formatLogDate(log.created_at),
+                `${log.user_name || historyUser.nom} (${log.user_role || historyUser.role})`,
+                log.description,
+                moduleLabels[log.module] || log.module || '-',
+                log.entity_id || '-'
+              ])} />
+            )}
+          </div>
           <button className="btn modal-submit" type="button" onClick={() => toggle(historyUser)}>Changer statut</button>
         </Modal>
       )}

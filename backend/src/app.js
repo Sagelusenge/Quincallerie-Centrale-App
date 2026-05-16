@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import errorHandler from './middleware/errorHandler.js';
+import auditMiddleware from './middleware/auditMiddleware.js';
 
 import authRoutes from './routes/authRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
@@ -34,6 +35,7 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
+app.use(auditMiddleware);
 
 app.use('/api/utilisateurs', utilisateurRoutes);
 app.use('/api/auth', authRoutes);

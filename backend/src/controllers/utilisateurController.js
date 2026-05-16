@@ -31,6 +31,44 @@ export const getAllUtilisateurs = async (req, res) => {
     }
 };
 
+// GET /api/utilisateurs/:id/historique
+export const getHistoriqueUtilisateur = async (req, res) => {
+    const { id } = req.params;
+    const entreprise_id = req.user.entreprise_id;
+
+    try {
+        const [users] = await pool.query(
+            `SELECT id_utilisateur, nom, email, role, actif
+             FROM utilisateur
+             WHERE id_utilisateur = ? AND entreprise_id = ?`,
+            [id, entreprise_id]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({ success: false, message: 'Utilisateur introuvable' });
+        }
+
+        const [logs] = await pool.query(
+            `SELECT id_log, user_id, user_name, user_role, action_type, module, entity_id, description, metadata, created_at
+             FROM user_activity_logs
+             WHERE entreprise_id = ? AND user_id = ?
+             ORDER BY created_at DESC
+             LIMIT 100`,
+            [entreprise_id, id]
+        );
+
+        res.json({
+            success: true,
+            data: {
+                utilisateur: users[0],
+                historique: logs
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 // POST /api/utilisateurs
 export const createUtilisateur = async (req, res) => {
     const { nom, email, mot_de_passe, role } = req.body;
