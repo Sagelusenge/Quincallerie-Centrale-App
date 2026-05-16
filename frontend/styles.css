@@ -2677,6 +2677,13 @@ button.kpi-card {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.user-history {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 16px;
+}
+
 .user-history-modal {
   max-width: 760px;
 }

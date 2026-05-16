@@ -529,7 +529,7 @@ function App() {
     ];
     const role = user?.role;
     return [
-      { id: 'dashboard', label: tr(lang, 'dashboard'), roles: ['manager', 'magasinier'] },
+      { id: 'dashboard', label: tr(lang, 'dashboard'), roles: ['manager', 'caissier', 'magasinier'] },
       { id: 'clients', label: tr(lang, 'clients'), roles: ['manager', 'caissier'] },
       { id: 'devis', label: tr(lang, 'devis'), roles: ['manager', 'caissier'] },
       { id: 'ventes', label: 'Factures', roles: ['manager', 'caissier'] },
@@ -856,6 +856,7 @@ function Page({ page, api, notify, lang, user, searchQuery, setPage }) {
       if (['ventes', 'paiements'].includes(page)) tasks.push(api('/ventes').then((r) => { next.ventes = r.data || []; }));
       if (page === 'dashboard') {
         tasks.push(api('/clients').then((r) => { next.clients = r.data || []; }).catch(() => {}));
+        tasks.push(api('/produits').then((r) => { next.produits = r.data || []; }).catch(() => {}));
         tasks.push(api('/devis').then((r) => { next.devis = r.data || []; }).catch(() => {}));
         tasks.push(api('/ventes').then((r) => { next.ventes = r.data || []; }).catch(() => {}));
         tasks.push(api('/dashboard/stats').then((r) => { next.extra.stats = r.data || {}; }).catch(() => {}));
@@ -878,6 +879,7 @@ function Page({ page, api, notify, lang, user, searchQuery, setPage }) {
         tasks.push(api('/rapports/creances').then((r) => { next.extra.creances = r.data || []; }).catch(() => {}));
         tasks.push(api('/rapports/stock-inventaire').then((r) => { next.extra.stock = r.data || []; }).catch(() => {}));
         tasks.push(api('/rapports/top-acheteurs').then((r) => { next.extra.top = r.data || []; }).catch(() => {}));
+        tasks.push(api('/paiements/rapport-caisse').then((r) => { next.extra.caisse = r.data || []; }).catch(() => {}));
       }
       if (adminPages.includes(page)) {
         tasks.push(api('/super-admin/stats').then((r) => { next.extra.stats = r.data || {}; }));
@@ -909,7 +911,7 @@ function Page({ page, api, notify, lang, user, searchQuery, setPage }) {
   if (error) return <p className="notice">{error}</p>;
 
   const props = { api, notify, data, submit, lang, user, searchQuery, setPage };
-  if (page === 'dashboard') return <Dashboard data={data} searchQuery={searchQuery} setPage={setPage} />;
+  if (page === 'dashboard') return <Dashboard data={data} searchQuery={searchQuery} setPage={setPage} user={user} />;
   if (page === 'clients') return <Clients {...props} />;
   if (page === 'produits') return <Produits {...props} />;
   if (page === 'devis') return <Devis {...props} />;
@@ -918,7 +920,7 @@ function Page({ page, api, notify, lang, user, searchQuery, setPage }) {
   if (page === 'utilisateurs') return <Utilisateurs {...props} />;
   if (page === 'mails') return <Mails {...props} />;
   if (page === 'categories') return <Categories {...props} />;
-  if (page === 'rapports') return <Rapports data={data} searchQuery={searchQuery} />;
+  if (page === 'rapports') return <Rapports data={data} searchQuery={searchQuery} user={user} />;
   if (page === 'superadmin') return <SuperAdminDashboard {...props} />;
   if (page === 'admin-entreprises') return <SuperAdminEntreprises {...props} />;
   if (page === 'admin-abonnements') return <SuperAdminAbonnements {...props} />;
@@ -927,7 +929,7 @@ function Page({ page, api, notify, lang, user, searchQuery, setPage }) {
   return null;
 }
 
-function Dashboard({ data, searchQuery = '', setPage }) {
+function Dashboard({ data, searchQuery = '', setPage, user }) {
   const [selectedPaymentMode, setSelectedPaymentMode] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const stats = data.extra.stats || {};
@@ -972,75 +974,98 @@ function Dashboard({ data, searchQuery = '', setPage }) {
     if (reste < total) return 'PARTIEL';
     return 'IMPAYE';
   };
+  const role = user?.role || 'manager';
+  const canSales = ['manager', 'caissier'].includes(role);
+  const canStock = ['manager', 'magasinier'].includes(role);
+  const canClients = ['manager', 'caissier'].includes(role);
+  const canPayments = ['manager', 'caissier'].includes(role);
+  const stockTotal = (data.produits || []).reduce((sum, produit) => sum + Number(produit.quantite_stock || 0), 0);
+  const stockAlerts = alertes.length || (data.produits || []).filter((produit) => produit.statut_stock && produit.statut_stock !== 'OK').length;
+  const dashboardKpis = [
+    canClients && { icon: Users, tone: 'blue', label: 'Total Clients', value: stats.total_clients || data.clients.length || 0, page: 'clients' },
+    canSales && { icon: CreditCard, tone: 'orange', label: 'CA mois en cours', value: `USD ${Number(stats.ca_mois_en_cours || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, page: 'ventes' },
+    canSales && { icon: FileText, tone: 'pink', label: 'Devis en attente', value: devisAttente || 0, page: 'devis' },
+    canPayments && { icon: WalletCards, tone: 'green', label: 'Caisse encaissee', value: money(paymentTotal), page: 'paiements' },
+    canStock && { icon: Package, tone: 'blue', label: 'Produits suivis', value: data.produits.length || 0, page: 'produits' },
+    canStock && { icon: Box, tone: 'orange', label: 'Stock total', value: stockTotal, page: 'produits' },
+    canStock && { icon: AlertTriangle, tone: 'danger', label: 'Alertes stock', value: `${stockAlerts} produits`, trend: stockAlerts ? 'Urgent' : 'OK', negative: Boolean(stockAlerts), page: 'produits' },
+    role === 'magasinier' && { icon: Download, tone: 'green', label: 'Approvisionnements', value: (data.extra.mouvementsStock || []).filter((m) => m.type_mouvement === 'entree').length, page: 'produits' }
+  ].filter(Boolean).slice(0, 4);
 
   return (
     <div className="manager-dashboard">
       <div className="grid cols-4 manager-kpis">
-        <KpiCard icon={Users} tone="blue" label="Total Clients" value={stats.total_clients || data.clients.length || 0} onClick={() => setPage?.('clients')} />
-        <KpiCard icon={CreditCard} tone="orange" label="CA mois en cours" value={`USD ${Number(stats.ca_mois_en_cours || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} onClick={() => setPage?.('ventes')} />
-        <KpiCard icon={FileText} tone="pink" label="Devis en attente" value={devisAttente || 0} onClick={() => setPage?.('devis')} />
-        <KpiCard icon={AlertTriangle} tone="danger" label="Alertes stock" value={`${alertes.length || 0} produits`} trend="Urgent" negative onClick={() => setPage?.('produits')} />
+        {dashboardKpis.map((card) => (
+          <KpiCard key={card.label} icon={card.icon} tone={card.tone} label={card.label} value={card.value} trend={card.trend} negative={card.negative} onClick={() => setPage?.(card.page)} />
+        ))}
       </div>
 
-      <div className="grid manager-mid">
-        <div className="panel manager-chart-panel">
-          <div className="panel-heading">
-            <h3>Ventes des 6 derniers mois</h3>
-            <div className="chart-legend">
-              <span><i className="sales" /> Activites reelles</span>
+      {(canSales || canPayments) && (
+        <div className="grid manager-mid">
+          {canSales && (
+            <div className="panel manager-chart-panel">
+              <div className="panel-heading">
+                <h3>Ventes des 6 derniers mois</h3>
+                <div className="chart-legend">
+                  <span><i className="sales" /> Activites reelles</span>
+                </div>
+              </div>
+              <div className="activity-chart-shell">
+                <div className="chart-lines">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <div className="activity-axis">
+                  {chartMonths.map((row) => {
+                    const month = String(row.mois || '').slice(0, 3);
+                    const value = Number(row.total || 0);
+                    const height = value > 0 ? Math.max(24, (value / maxVente) * 210) : 8;
+                    return (
+                      <button className="activity-month" key={month} type="button" title={`Activite ${month}: ${money(value)}`}>
+                        <strong>{value > 0 ? formatUsdCompact(value).replace('USD ', '') : '-'}</strong>
+                        <div className="activity-track">
+                          <i style={{ height }} />
+                        </div>
+                        <span>{month}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="activity-chart-shell">
-            <div className="chart-lines">
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
-            <div className="activity-axis">
-              {chartMonths.map((row) => {
-                const month = String(row.mois || '').slice(0, 3);
-                const value = Number(row.total || 0);
-                const height = value > 0 ? Math.max(24, (value / maxVente) * 210) : 8;
-                return (
-                  <button className="activity-month" key={month} type="button" title={`Activite ${month}: ${money(value)}`}>
-                    <strong>{value > 0 ? formatUsdCompact(value).replace('USD ', '') : '-'}</strong>
-                    <div className="activity-track">
-                      <i style={{ height }} />
-                    </div>
-                    <span>{month}</span>
+          )}
+
+          {canPayments && (
+            <div className="panel payment-panel">
+              <h3>Modes de paiement</h3>
+              <div className="donut-wrap">
+                <div
+                  className="payment-donut"
+                  style={{ background: `radial-gradient(circle closest-side, #fff 66%, transparent 67%), conic-gradient(${donutParts.length ? donutParts.join(', ') : '#e6e8ee 0% 100%'})` }}
+                  title={selectedPayment ? `${selectedPayment.label}: ${money(selectedPayment.total)}` : 'Aucun paiement'}
+                >
+                  <strong>{paymentPercent}%</strong>
+                  <span>{selectedPayment?.label || 'AUCUN'}</span>
+                </div>
+              </div>
+              <div className="payment-legend">
+                {paymentRows.length ? paymentRows.map((row, index) => (
+                  <button className={selectedPayment?.mode === row.mode ? 'active' : ''} key={row.mode} type="button" onClick={() => setSelectedPaymentMode(row.mode)}>
+                    <i style={{ background: paymentPalette[index % paymentPalette.length] }} />
+                    <span>{row.label}</span>
+                    <b>{money(row.total)}</b>
                   </button>
-                );
-              })}
+                )) : <span><i className="card-pay" /> Aucun paiement</span>}
+              </div>
             </div>
-          </div>
+          )}
         </div>
+      )}
 
-        <div className="panel payment-panel">
-          <h3>Modes de paiement</h3>
-          <div className="donut-wrap">
-            <div
-              className="payment-donut"
-              style={{ background: `radial-gradient(circle closest-side, #fff 66%, transparent 67%), conic-gradient(${donutParts.length ? donutParts.join(', ') : '#e6e8ee 0% 100%'})` }}
-              title={selectedPayment ? `${selectedPayment.label}: ${money(selectedPayment.total)}` : 'Aucun paiement'}
-            >
-              <strong>{paymentPercent}%</strong>
-              <span>{selectedPayment?.label || 'AUCUN'}</span>
-            </div>
-          </div>
-          <div className="payment-legend">
-            {paymentRows.length ? paymentRows.map((row, index) => (
-              <button className={selectedPayment?.mode === row.mode ? 'active' : ''} key={row.mode} type="button" onClick={() => setSelectedPaymentMode(row.mode)}>
-                <i style={{ background: paymentPalette[index % paymentPalette.length] }} />
-                <span>{row.label}</span>
-                <b>{money(row.total)}</b>
-              </button>
-            )) : <span><i className="card-pay" /> Aucun paiement</span>}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid manager-bottom">
+      {canClients && (
+        <div className="grid manager-bottom">
         <div className="panel manager-table-panel">
           <div className="panel-heading">
             <h3>5 dernieres factures</h3>
@@ -1087,6 +1112,7 @@ function Dashboard({ data, searchQuery = '', setPage }) {
           <button className="portfolio-link" type="button" onClick={() => setPage?.('clients')}>Analyse complete du portefeuille <ArrowRight size={20} /></button>
         </div>
       </div>
+      )}
 
       <div className="panel top-products-panel">
         <div className="panel-heading">
@@ -1114,7 +1140,7 @@ function Dashboard({ data, searchQuery = '', setPage }) {
 
       <div className="panel">
         <div className="panel-heading">
-          <h3>Mouvements stock recents</h3>
+          <h3>{role === 'magasinier' ? 'Approvisionnements recents' : 'Mouvements stock recents'}</h3>
           <span className="panel-pill">{(data.extra.mouvementsStock || []).length} mouvements</span>
         </div>
         <Table headers={['Produit', 'Type', 'Quantite', 'Date']} rows={(data.extra.mouvementsStock || []).map((m) => [
@@ -1818,10 +1844,14 @@ function filterRowsByPeriod(rows, period, dateKeys = ['date_vente']) {
   });
 }
 
-function Rapports({ data, searchQuery = '' }) {
+function Rapports({ data, searchQuery = '', user }) {
   const source = data.extra;
   const term = searchQuery.trim().toLowerCase();
   const [period, setPeriod] = useState('journalier');
+  const role = user?.role || 'manager';
+  const canSalesReports = ['manager', 'caissier'].includes(role);
+  const canStockReports = ['manager', 'magasinier'].includes(role);
+  const canCashReports = ['manager', 'caissier'].includes(role);
   const factures = filterRowsByPeriod(source.factures || [], period)
     .filter((r) => !term || `${r.numero_facture} ${r.client_nom || ''} ${r.client_postnom || ''}`.toLowerCase().includes(term));
   const creances = filterRowsByPeriod(source.creances || [], period)
@@ -1829,6 +1859,7 @@ function Rapports({ data, searchQuery = '' }) {
   const stock = (source.stock || []).filter((r) => !term || `${r.nom} ${r.statut || ''}`.toLowerCase().includes(term));
   const top = filterRowsByPeriod(source.top || [], period, ['derniere_visite'])
     .filter((r) => !term || `${r.nom} ${r.postnom || ''}`.toLowerCase().includes(term));
+  const caisse = (source.caisse || []).filter((r) => !term || `${r.Date} ${r.Mode_Paiement} ${r.Total_Encaisse}`.toLowerCase().includes(term));
   const printRows = (title, headers, rows) => {
     printTableDocument(title, headers, rows, {
       badge: periodLabel(period).toUpperCase(),
@@ -1850,28 +1881,30 @@ function Rapports({ data, searchQuery = '' }) {
         </div>
         <div className="report-cards">
           <Stat label="Periode" value={periodLabel(period)} />
-          <Stat label="Factures" value={factures.length} />
-          <Stat label="Creances" value={creances.length} />
-          <Stat label="Produits en stock" value={stock.length} />
+          {canSalesReports && <Stat label="Factures" value={factures.length} />}
+          {canSalesReports && <Stat label="Creances" value={creances.length} />}
+          {canCashReports && <Stat label="Lignes caisse" value={caisse.length} />}
+          {canStockReports && <Stat label="Produits en stock" value={stock.length} />}
         </div>
       </div>
-      <div className="panel"><div className="panel-heading"><h3>Creances</h3><button className="btn print" onClick={() => printRows(`Creances - ${period}`, ['Facture', 'Client', 'Du', 'Paye', 'Reste'], creances.map((r) => [r.numero_facture, r.client_nom, money(r.montant_du), money(r.montant_paye), money(r.reste_a_payer)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Facture', 'Client', 'Du', 'Paye', 'Reste']} rows={creances.map((r) => [r.numero_facture, r.client_nom, money(r.montant_du), money(r.montant_paye), money(r.reste_a_payer)])} /></div>
-      <div className="panel"><div className="panel-heading"><h3>Factures</h3><button className="btn print" onClick={() => printRows('Factures', ['Facture', 'Client', 'Montant', 'Reste'], factures.map((r) => [r.numero_facture, `${r.client_nom} ${r.client_postnom || ''}`, money(r.montant_ttc), money(r.reste_a_payer)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Facture', 'Client', 'Montant', 'Reste']} rows={factures.map((r) => [r.numero_facture, `${r.client_nom} ${r.client_postnom || ''}`, money(r.montant_ttc), money(r.reste_a_payer)])} /></div>
+      {canSalesReports && <div className="panel"><div className="panel-heading"><h3>Creances</h3><button className="btn print" onClick={() => printRows(`Creances - ${period}`, ['Facture', 'Client', 'Du', 'Paye', 'Reste'], creances.map((r) => [r.numero_facture, r.client_nom, money(r.montant_du), money(r.montant_paye), money(r.reste_a_payer)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Facture', 'Client', 'Du', 'Paye', 'Reste']} rows={creances.map((r) => [r.numero_facture, r.client_nom, money(r.montant_du), money(r.montant_paye), money(r.reste_a_payer)])} /></div>}
+      {canSalesReports && <div className="panel"><div className="panel-heading"><h3>Factures</h3><button className="btn print" onClick={() => printRows('Factures', ['Facture', 'Client', 'Montant', 'Reste'], factures.map((r) => [r.numero_facture, `${r.client_nom} ${r.client_postnom || ''}`, money(r.montant_ttc), money(r.reste_a_payer)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Facture', 'Client', 'Montant', 'Reste']} rows={factures.map((r) => [r.numero_facture, `${r.client_nom} ${r.client_postnom || ''}`, money(r.montant_ttc), money(r.reste_a_payer)])} /></div>}
+      {canCashReports && <div className="panel"><div className="panel-heading"><h3>Rapport caisse</h3><button className="btn print" onClick={() => printRows(`Caisse - ${period}`, ['Date', 'Mode', 'Transactions', 'Total'], caisse.map((r) => [r.Date, r.Mode_Paiement, r.Nombre_Transactions, money(r.Total_Encaisse)]))}><Printer size={18} /> Imprimer</button></div><Table headers={['Date', 'Mode', 'Transactions', 'Total']} rows={caisse.map((r) => [r.Date, r.Mode_Paiement, r.Nombre_Transactions, money(r.Total_Encaisse)])} /></div>}
       <div className="grid cols-2">
-        <div className="panel">
+        {canStockReports && <div className="panel">
           <div className="panel-heading">
             <h3>Inventaire</h3>
             <button className="btn print" onClick={() => printTableDocument('Fiche de stock', ['Produit', 'Stock', 'Valeur', 'Statut'], stock.map((r) => [r.nom, r.quantite_stock, money(r.valeur_stock_ht), r.statut]), { badge: 'INVENTAIRE', period: 'Inventaire courant', tableTitle: 'Etat du stock' })}><Printer size={18} /> Imprimer</button>
           </div>
           <Table headers={['Produit', 'Stock', 'Valeur', 'Statut']} rows={stock.map((r) => [r.nom, r.quantite_stock, money(r.valeur_stock_ht), <Badge>{r.statut}</Badge>])} />
-        </div>
-        <div className="panel">
+        </div>}
+        {canSalesReports && <div className="panel">
           <div className="panel-heading">
             <h3>Top clients</h3>
             <button className="btn print" onClick={() => printRows(`Top clients - ${period}`, ['Client', 'Achats', 'CA'], top.map((r) => [`${r.nom} ${r.postnom || ''}`, r.nombre_achats, money(r.ca_total)]))}><Printer size={18} /> Imprimer</button>
           </div>
           <Table headers={['Client', 'Achats', 'CA']} rows={top.map((r) => [`${r.nom} ${r.postnom || ''}`, r.nombre_achats, money(r.ca_total)])} />
-        </div>
+        </div>}
       </div>
     </div>
   );

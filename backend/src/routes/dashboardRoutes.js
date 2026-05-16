@@ -9,16 +9,16 @@ import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// ✅ Seulement le MANAGER voit le dashboard complet
+// Dashboard adapte selon le role connecte.
 router.get('/stats',             
     protect, 
-    authorizeRoles('manager'), 
+    authorizeRoles('manager', 'caissier', 'magasinier'), 
     getStats
 );
 
 router.get('/ventes-mensuelles', 
     protect, 
-    authorizeRoles('manager'), 
+    authorizeRoles('manager', 'caissier'), 
     getVentesMensuelles
 );
 
@@ -30,7 +30,7 @@ router.get('/alertes-stock',
 
 router.get('/produits-plus-vendus',
     protect,
-    authorizeRoles('manager'),
+    authorizeRoles('manager', 'caissier', 'magasinier'),
     getProduitsPlusVendus
 );
 
