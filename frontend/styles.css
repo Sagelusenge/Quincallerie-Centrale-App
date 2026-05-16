@@ -715,6 +715,62 @@ tr:last-child td {
   gap: 12px;
 }
 
+.quote-product-picker {
+  align-items: end;
+  background: #f8fafc;
+  border: 1px solid #d8deea;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  padding: 12px;
+}
+
+.quote-product-picker input,
+.quote-product-picker select {
+  min-width: 0;
+}
+
+.quote-line-list {
+  display: grid;
+  gap: 8px;
+}
+
+.quote-line-item {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d8deea;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(128px, 170px);
+  padding: 12px;
+}
+
+.quote-line-item > div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.quote-line-item strong {
+  color: #000c3d;
+  overflow-wrap: anywhere;
+}
+
+.quote-line-item span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.quote-line-item em {
+  color: #c95b00;
+  font-style: normal;
+  font-weight: 900;
+}
+
 .quote-modal {
   max-width: 840px;
 }
@@ -3383,6 +3439,8 @@ button.kpi-card {
   .grid.cols-4,
   .form-row,
   .line-row,
+  .quote-product-picker,
+  .quote-line-item,
   .login-page {
     grid-template-columns: 1fr;
   }

@@ -1223,54 +1223,107 @@ function CreateLauncher({ title, description, buttonLabel, onClick }) {
 }
 
 function LineEditor({ lignes, setLignes, produits }) {
-  const [productQueries, setProductQueries] = useState({});
-  const update = (index, patch) => {
-    setLignes(lignes.map((ligne, i) => i === index ? { ...ligne, ...patch } : ligne));
+  const [productQuery, setProductQuery] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const productKey = (produit) => produit?.reference_produit || produit?.id_produit || '';
+  const normalizeLines = (nextLines) => {
+    const grouped = [];
+    nextLines.filter((ligne) => ligne.produit_id).forEach((ligne) => {
+      const produit = produits.find((p) => p.id_produit === ligne.produit_id);
+      const key = productKey(produit) || ligne.produit_id;
+      const existing = grouped.find((item) => {
+        const existingProduct = produits.find((p) => p.id_produit === item.produit_id);
+        return (productKey(existingProduct) || item.produit_id) === key;
+      });
+      if (existing) {
+        existing.quantite = Number(existing.quantite || 0) + Math.max(1, Number(ligne.quantite || 1));
+      } else {
+        grouped.push({ produit_id: ligne.produit_id, quantite: Math.max(1, Number(ligne.quantite || 1)) });
+      }
+    });
+    return grouped.length ? grouped : [{ produit_id: '', quantite: 1 }];
   };
-  const add = () => setLignes([...lignes, { produit_id: produits[0]?.id_produit || '', quantite: 1 }]);
-  const remove = (index) => setLignes(lignes.filter((_, i) => i !== index));
-  const filteredProducts = (index, currentId) => {
-    const term = String(productQueries[index] || '').trim().toLowerCase();
-    const selected = produits.find((p) => p.id_produit === currentId);
-    const matches = produits.filter((p) => !term || `${p.nom} ${p.reference_produit || ''} ${p.categorie_nom || ''}`.toLowerCase().includes(term));
-    const merged = selected && !matches.some((p) => p.id_produit === selected.id_produit) ? [selected, ...matches] : matches;
-    return merged;
+  const activeLines = normalizeLines(lignes).filter((ligne) => ligne.produit_id);
+
+  useEffect(() => {
+    const normalized = normalizeLines(lignes);
+    if (JSON.stringify(lignes) !== JSON.stringify(normalized)) {
+      setLignes(normalized);
+    }
+  }, [lignes, produits]);
+
+  const updateQuantity = (produit_id, quantite) => {
+    setLignes(normalizeLines(activeLines.map((ligne) => (
+      ligne.produit_id === produit_id ? { ...ligne, quantite } : ligne
+    ))));
+  };
+  const remove = (produit_id) => setLignes(normalizeLines(activeLines.filter((ligne) => ligne.produit_id !== produit_id)));
+  const addProduct = () => {
+    if (!selectedProductId) return;
+
+    const selectedProduct = produits.find((p) => p.id_produit === selectedProductId);
+    const selectedKey = productKey(selectedProduct) || selectedProductId;
+    const existingIndex = activeLines.findIndex((ligne) => {
+      const produit = produits.find((p) => p.id_produit === ligne.produit_id);
+      return (productKey(produit) || ligne.produit_id) === selectedKey;
+    });
+
+    if (existingIndex >= 0) {
+      setLignes(normalizeLines(activeLines.map((ligne, index) => (
+        index === existingIndex ? { ...ligne, quantite: Number(ligne.quantite || 0) + 1 } : ligne
+      ))));
+    } else {
+      setLignes(normalizeLines([...activeLines, { produit_id: selectedProductId, quantite: 1 }]));
+    }
+
+    setSelectedProductId('');
+    setProductQuery('');
+  };
+  const availableProducts = () => {
+    const term = productQuery.trim().toLowerCase();
+    const usedKeys = new Set(activeLines.map((ligne) => {
+      const produit = produits.find((p) => p.id_produit === ligne.produit_id);
+      return productKey(produit) || ligne.produit_id;
+    }));
+    return produits.filter((p) => {
+      if (usedKeys.has(productKey(p) || p.id_produit)) return false;
+      return !term || `${p.nom} ${p.reference_produit || ''} ${p.categorie_nom || ''}`.toLowerCase().includes(term);
+    });
   };
 
   return (
     <div className="line-editor">
-      {lignes.map((ligne, index) => {
-        const selectedProduct = produits.find((p) => p.id_produit === ligne.produit_id) || produits[0];
-        const productOptions = filteredProducts(index, ligne.produit_id);
+      <div className="quote-product-picker">
+        <input
+          type="search"
+          value={productQuery}
+          onChange={(event) => setProductQuery(event.target.value)}
+          placeholder="Rechercher produit, reference ou categorie"
+        />
+        <select value={selectedProductId} onChange={(event) => setSelectedProductId(event.target.value)}>
+          <option value="">Selectionner un produit</option>
+          {availableProducts().map((p) => <option key={p.id_produit} value={p.id_produit}>{p.nom} - {money(p.prix_ht)}</option>)}
+        </select>
+        <button className="btn secondary small" type="button" onClick={addProduct}><Plus size={16} /> Ajouter</button>
+      </div>
+      <div className="quote-line-list">
+      {activeLines.length ? activeLines.map((ligne, index) => {
+        const selectedProduct = produits.find((p) => p.id_produit === ligne.produit_id);
         return (
-          <div className="form-row line-row" key={index}>
-            <label className="line-product-picker">
-              Produit {index + 1}
-              <div className="line-product-layout">
-                <div className="line-product-image">
-                  {selectedProduct ? <img src={selectedProduct.photo_url || imageForIndex(index)} alt="" /> : <Box size={24} />}
-                </div>
-                <div className="line-product-fields">
-                  <input
-                    type="search"
-                    value={productQueries[index] || ''}
-                    onChange={(event) => setProductQueries({ ...productQueries, [index]: event.target.value })}
-                    placeholder="Rechercher produit, reference ou categorie"
-                  />
-                  <select value={ligne.produit_id} onChange={(e) => update(index, { produit_id: e.target.value })} required>
-                    {productOptions.map((p) => <option key={p.id_produit} value={p.id_produit}>{p.nom} - {money(p.prix_ht)}</option>)}
-                  </select>
-                </div>
-              </div>
-            </label>
+          <div className="quote-line-item" key={ligne.produit_id || index}>
+            <div>
+              <strong>{selectedProduct?.nom || 'Produit selectionne'}</strong>
+              <span>{selectedProduct?.reference_produit || 'Sans reference'} - {selectedProduct?.categorie_nom || 'Sans categorie'} - Stock {selectedProduct?.quantite_stock ?? '-'}</span>
+              <em>{money(selectedProduct?.prix_ht || 0)}</em>
+            </div>
             <div className="line-qty">
-              <Input label="Quantite" type="number" value={ligne.quantite} onChange={(quantite) => update(index, { quantite })} />
-              {lignes.length > 1 && <button className="action delete" type="button" onClick={() => remove(index)} title="Supprimer ligne"><Trash2 size={16} /></button>}
+              <Input label="Quantite" type="number" value={ligne.quantite} onChange={(quantite) => updateQuantity(ligne.produit_id, quantite)} />
+              <button className="action delete" type="button" onClick={() => remove(ligne.produit_id)} title="Supprimer ligne"><Trash2 size={16} /></button>
             </div>
           </div>
         );
-      })}
-      <button className="btn secondary small" type="button" onClick={add}>Ajouter une ligne</button>
+      }) : <div className="empty compact">Aucun produit selectionne</div>}
+      </div>
     </div>
   );
 }
@@ -1299,7 +1352,7 @@ function QuoteComposer({ form, setForm, clients, produits, submitLabel }) {
       <section className="quote-block">
         <div className="quote-block-head">
           <span>Articles</span>
-          <strong>{form.lignes.length} ligne{form.lignes.length > 1 ? 's' : ''}</strong>
+          <strong>{form.lignes.filter((ligne) => ligne.produit_id).length} ligne{form.lignes.filter((ligne) => ligne.produit_id).length > 1 ? 's' : ''}</strong>
         </div>
         <LineEditor lignes={form.lignes} setLignes={(lignes) => setForm({ ...form, lignes })} produits={produits} />
       </section>
@@ -1563,7 +1616,7 @@ function Produits({ api, notify, data, submit, user, searchQuery = '' }) {
 }
 
 function Devis({ api, notify, data, submit, searchQuery = '' }) {
-  const emptyLine = () => ({ produit_id: data.produits[0]?.id_produit || '', quantite: 1 });
+  const emptyLine = () => ({ produit_id: '', quantite: 1 });
   const [form, setForm] = useState({ client_id: '', lignes: [emptyLine()] });
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -1585,16 +1638,21 @@ function Devis({ api, notify, data, submit, searchQuery = '' }) {
       lignes: detail.data.lignes?.length ? detail.data.lignes.map((l) => ({ produit_id: l.produit_id, quantite: l.quantite })) : [emptyLine()]
     });
   };
-  const buildLignes = (lignes) => lignes.map((ligne) => {
+  const buildLignes = (lignes) => lignes.filter((ligne) => ligne.produit_id).map((ligne) => {
     const produit = data.produits.find((p) => p.id_produit === ligne.produit_id);
     return { produit_id: ligne.produit_id, quantite: Number(ligne.quantite), prix_unitaire_ht: Number(produit?.prix_ht || 0) };
   });
   const saveEdit = () => submit(async () => {
+    const lignes = buildLignes(editing.lignes);
+    if (lignes.length === 0) {
+      notify('Selectionnez au moins un produit.');
+      return;
+    }
     await api(`/devis/${editing.id_devis}`, {
       method: 'PUT',
       body: JSON.stringify({
         client_id: editing.client_id,
-        lignes: buildLignes(editing.lignes)
+        lignes
       })
     });
     setEditing(null);
@@ -1641,7 +1699,12 @@ function Devis({ api, notify, data, submit, searchQuery = '' }) {
       {creating && (
         <Modal title="Nouveau devis" onClose={() => setCreating(false)} className="quote-modal">
           <Form onSubmit={() => submit(async () => {
-            await api('/devis', { method: 'POST', body: JSON.stringify({ client_id: form.client_id || data.clients[0]?.id_client, lignes: buildLignes(form.lignes) }) });
+            const lignes = buildLignes(form.lignes);
+            if (lignes.length === 0) {
+              notify('Selectionnez au moins un produit.');
+              return;
+            }
+            await api('/devis', { method: 'POST', body: JSON.stringify({ client_id: form.client_id || data.clients[0]?.id_client, lignes }) });
             setCreating(false);
             notify('Devis cree');
           })}>
@@ -1661,7 +1724,7 @@ function Devis({ api, notify, data, submit, searchQuery = '' }) {
 }
 
 function Ventes({ api, notify, data, submit, searchQuery = '' }) {
-  const emptyLine = () => ({ produit_id: data.produits[0]?.id_produit || '', quantite: 1 });
+  const emptyLine = () => ({ produit_id: '', quantite: 1 });
   const [form, setForm] = useState({ client_id: '', lignes: [emptyLine()] });
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -1687,11 +1750,16 @@ function Ventes({ api, notify, data, submit, searchQuery = '' }) {
     });
   };
   const saveEdit = () => submit(async () => {
+    const articles = editing.lignes.filter((ligne) => ligne.produit_id).map((ligne) => ({ produit_id: ligne.produit_id, quantite: Number(ligne.quantite) }));
+    if (articles.length === 0) {
+      notify('Selectionnez au moins un produit.');
+      return;
+    }
     await api(`/ventes/${editing.id_ventes}`, {
       method: 'PUT',
       body: JSON.stringify({
         client_id: editing.client_id,
-        articles: editing.lignes.map((ligne) => ({ produit_id: ligne.produit_id, quantite: Number(ligne.quantite) }))
+        articles
       })
     });
     setEditing(null);
@@ -1736,7 +1804,12 @@ function Ventes({ api, notify, data, submit, searchQuery = '' }) {
       {creating && (
         <Modal title="Vente directe" onClose={() => setCreating(false)}>
           <Form onSubmit={() => submit(async () => {
-            await api('/ventes', { method: 'POST', body: JSON.stringify({ client_id: form.client_id || data.clients[0]?.id_client, articles: form.lignes.map((ligne) => ({ produit_id: ligne.produit_id, quantite: Number(ligne.quantite) })) }) });
+            const articles = form.lignes.filter((ligne) => ligne.produit_id).map((ligne) => ({ produit_id: ligne.produit_id, quantite: Number(ligne.quantite) }));
+            if (articles.length === 0) {
+              notify('Selectionnez au moins un produit.');
+              return;
+            }
+            await api('/ventes', { method: 'POST', body: JSON.stringify({ client_id: form.client_id || data.clients[0]?.id_client, articles }) });
             setCreating(false);
             notify('Facture creee');
           })}>
