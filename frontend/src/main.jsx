@@ -1860,7 +1860,7 @@ function Rapports({ data, searchQuery = '' }) {
   );
 }
 
-function Utilisateurs({ api, notify, data, submit, searchQuery = '' }) {
+function Utilisateurs({ api, notify, data, submit, user, searchQuery = '' }) {
   const [form, setForm] = useState({ nom: '', email: '', mot_de_passe: 'User@123', role: 'caissier' });
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -1871,6 +1871,8 @@ function Utilisateurs({ api, notify, data, submit, searchQuery = '' }) {
   const roles = [['manager', 'Manager'], ['caissier', 'Caissier'], ['magasinier', 'Magasinier']];
   const term = `${searchQuery} ${query}`.trim().toLowerCase();
   const users = (data.extra.utilisateurs || []).filter((u) => `${u.nom} ${u.email} ${u.role}`.toLowerCase().includes(term));
+  const currentUserId = user?.id || user?.id_utilisateur;
+  const canDeleteUser = (target) => target.id_utilisateur !== currentUserId && target.role !== 'manager';
   const moduleLabels = {
     clients: 'Clients',
     produits: 'Produits',
@@ -1923,6 +1925,10 @@ function Utilisateurs({ api, notify, data, submit, searchQuery = '' }) {
     notify('Statut modifie');
   });
   const remove = (user) => {
+    if (!canDeleteUser(user)) {
+      notify(user.id_utilisateur === currentUserId ? 'Vous ne pouvez pas supprimer votre propre compte' : 'Un manager ne peut pas supprimer un autre manager');
+      return;
+    }
     if (!window.confirm(`Supprimer ${user.nom} ?`)) return;
     submit(async () => {
       await api(`/utilisateurs/${user.id_utilisateur}`, { method: 'DELETE' });
@@ -1950,7 +1956,7 @@ function Utilisateurs({ api, notify, data, submit, searchQuery = '' }) {
             onPrint={() => printDocument('Utilisateur', [['Nom', u.nom], ['Email', u.email], ['Role', u.role], ['Statut', u.actif ? 'actif' : 'suspendu']], { paper: 'page' })}
             onToggle={() => openHistory(u)}
             toggleLabel="Vision et historique"
-            onDelete={() => remove(u)}
+            onDelete={canDeleteUser(u) ? () => remove(u) : null}
           />
         ])} />
       </div>
@@ -1977,11 +1983,18 @@ function Utilisateurs({ api, notify, data, submit, searchQuery = '' }) {
         </Modal>
       )}
       {historyUser && (
-        <Modal title={`Vision utilisateur - ${historyUser.nom}`} onClose={() => setHistoryUser(null)}>
-          <div className="user-history">
-            <Stat label="Role" value={historyUser.role} />
-            <Stat label="Statut" value={historyUser.actif ? 'Actif' : 'Suspendu'} />
-            <Stat label="Email" value={historyUser.email} />
+        <Modal title={`Vision utilisateur`} onClose={() => setHistoryUser(null)} className="user-history-modal">
+          <div className="user-profile-card">
+            <div className="user-profile-avatar">{getInitials(historyUser.nom || historyUser.email)}</div>
+            <div className="user-profile-main">
+              <span>Utilisateur</span>
+              <strong>{historyUser.nom}</strong>
+              <em>{historyUser.email}</em>
+            </div>
+            <div className="user-profile-meta">
+              <span className="history-chip">{historyUser.role}</span>
+              <span className={`history-chip ${historyUser.actif ? 'ok' : 'danger'}`}>{historyUser.actif ? 'Actif' : 'Suspendu'}</span>
+            </div>
           </div>
           <div className="audit-history">
             <div className="panel-heading">

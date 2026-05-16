@@ -2605,11 +2605,88 @@ button.kpi-card {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.user-history {
+.user-history-modal {
+  max-width: 760px;
+}
+
+.user-profile-card {
+  align-items: center;
+  background: linear-gradient(135deg, #f8fafc, #eef3fb);
+  border: 1px solid #c5cad6;
+  border-radius: 8px;
   display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-bottom: 16px;
+  gap: 18px;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  margin-bottom: 18px;
+  padding: 18px;
+}
+
+.user-profile-avatar {
+  align-items: center;
+  background: #002761;
+  border-radius: 8px;
+  color: #fff;
+  display: grid;
+  font-size: 24px;
+  font-weight: 900;
+  height: 64px;
+  justify-items: center;
+  width: 64px;
+}
+
+.user-profile-main {
+  min-width: 0;
+}
+
+.user-profile-main span,
+.user-profile-main em {
+  color: #5f6574;
+  display: block;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.user-profile-main strong {
+  color: #000c3d;
+  display: block;
+  font-size: 25px;
+  font-weight: 900;
+  line-height: 1.1;
+  margin: 4px 0;
+}
+
+.user-profile-main em {
+  overflow-wrap: anywhere;
+}
+
+.user-profile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.history-chip {
+  background: #eef2f7;
+  border: 1px solid #cfd6e3;
+  border-radius: 999px;
+  color: #000c3d;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 8px 12px;
+  text-transform: capitalize;
+}
+
+.history-chip.ok {
+  background: #d7f7e5;
+  border-color: #a9e8c4;
+  color: #00733f;
+}
+
+.history-chip.danger {
+  background: #ffe4e8;
+  border-color: #ffc7d1;
+  color: #cc000d;
 }
 
 .audit-history {
@@ -2628,6 +2705,10 @@ button.kpi-card {
   border: 0;
   max-height: 360px;
   overflow: auto;
+}
+
+.audit-history table {
+  min-width: 650px;
 }
 
 .category-market {
@@ -3097,6 +3178,26 @@ button.kpi-card {
 
   .email-card {
     grid-template-columns: 1fr;
+  }
+
+  .user-profile-card {
+    align-items: start;
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .user-profile-avatar {
+    font-size: 20px;
+    height: 52px;
+    width: 52px;
+  }
+
+  .user-profile-main strong {
+    font-size: 21px;
+  }
+
+  .user-profile-meta {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
   }
 
   .category-rank-list,

@@ -200,14 +200,25 @@ export const deleteUtilisateur = async (req, res) => {
     }
 
     try {
+        const [users] = await pool.query(
+            `SELECT id_utilisateur, role
+             FROM utilisateur
+             WHERE id_utilisateur = ? AND entreprise_id = ?`,
+            [id, entreprise_id]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({ success: false, message: 'Utilisateur introuvable' });
+        }
+
+        if (users[0].role === 'manager') {
+            return res.status(403).json({ success: false, message: 'Un manager ne peut pas supprimer un autre manager' });
+        }
+
         const [result] = await pool.query(
             `DELETE FROM utilisateur WHERE id_utilisateur = ? AND entreprise_id = ?`,
             [id, entreprise_id]
         );
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ success: false, message: 'Utilisateur introuvable' });
-        }
 
         res.json({ success: true, message: 'Utilisateur supprime' });
     } catch (error) {
