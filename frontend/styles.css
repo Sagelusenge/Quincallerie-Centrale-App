@@ -3273,6 +3273,158 @@ button.kpi-card {
   text-align: center;
 }
 
+/* Login redesign */
+.login-page {
+  align-items: center;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 174, 43, 0.12), transparent 28%),
+    radial-gradient(circle at 82% 14%, rgba(59, 130, 246, 0.14), transparent 30%),
+    linear-gradient(135deg, #f4f6fb 0%, #eef2f7 100%);
+  display: grid;
+  justify-items: center;
+  min-height: 100vh;
+  padding: 28px;
+}
+
+.login-panel {
+  display: grid;
+  justify-items: center;
+  padding: 0;
+  width: min(100%, 520px);
+}
+
+.login-box {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #cdd3df;
+  border-radius: 10px;
+  box-shadow: 0 26px 70px rgba(11, 18, 32, 0.14);
+  display: grid;
+  max-width: 520px;
+  padding: 34px;
+  width: 100%;
+}
+
+.login-card-brand {
+  align-items: center;
+  border-bottom: 1px solid #e1e5ee;
+  display: flex;
+  gap: 14px;
+  margin-bottom: 26px;
+  padding-bottom: 22px;
+}
+
+.login-brand-mark {
+  align-items: center;
+  background: #fff4df;
+  border: 1px solid #ffd48a;
+  border-radius: 10px;
+  color: #ff9f1a;
+  display: inline-flex;
+  height: 54px;
+  justify-content: center;
+  width: 54px;
+}
+
+.login-card-brand strong {
+  color: #000c3d;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.login-card-brand span {
+  color: #667085;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.login-box h2 {
+  color: #000c3d;
+  font-size: 30px;
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.login-box p {
+  color: #4b5563;
+  font-size: 17px;
+  line-height: 1.45;
+  margin: 0 0 28px;
+  text-align: center;
+}
+
+.login-box .form {
+  gap: 22px;
+}
+
+.login-box label {
+  color: #111827;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.input-shell {
+  background: #f8fafc;
+  border: 1px solid #c8cfdb;
+  border-radius: 8px;
+  color: #747b88;
+  min-height: 54px;
+  padding: 0 14px;
+}
+
+.input-shell:focus-within {
+  border-color: #244a80;
+  box-shadow: 0 0 0 3px rgba(36, 74, 128, 0.14);
+}
+
+.input-shell input {
+  color: #000c3d;
+  font-size: 17px;
+  min-height: 52px;
+}
+
+.password-eye {
+  border-radius: 8px;
+  color: #667085;
+}
+
+.password-eye:hover {
+  background: #e8eef8;
+  color: #002761;
+}
+
+.forgot-inline {
+  color: #002761;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.login-submit {
+  background: #002761;
+  border-radius: 8px;
+  box-shadow: 0 12px 24px rgba(0, 39, 97, 0.2);
+  font-size: 17px;
+  min-height: 56px;
+}
+
+.login-submit:hover {
+  background: #003b87;
+}
+
+.forgot-box {
+  background: #f8fafc;
+  border: 1px solid #d8deea;
+  border-radius: 8px;
+  margin-top: 20px;
+  padding: 18px;
+}
+
+.login-card-footer {
+  border-top: 1px solid #e1e5ee;
+  color: #667085;
+  font-size: 14px;
+  margin-top: 26px;
+}
+
 .mail-status {
   color: var(--muted);
   display: grid;
@@ -3475,7 +3627,7 @@ button.kpi-card {
   }
 
   .login-panel {
-    padding: 24px;
+    padding: 0;
   }
 
   .admin-shell .main {
@@ -3529,7 +3681,7 @@ button.kpi-card {
 
   .login-panel {
     min-height: auto;
-    padding: 54px 24px 120px;
+    padding: 0;
   }
 
   .login-footer {

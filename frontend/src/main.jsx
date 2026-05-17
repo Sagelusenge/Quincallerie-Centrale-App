@@ -736,14 +736,14 @@ function Login({ onLogin, notify, toast }) {
       <section className="login-panel">
         <div className="login-box">
           <div className="login-card-brand">
-            <Briefcase size={36} />
+            <span className="login-brand-mark"><Briefcase size={32} /></span>
             <div>
               <strong>CRM PME</strong>
               <span>PME Solutions</span>
             </div>
           </div>
           <h2>Bienvenue</h2>
-          <p>Connectez-vous pour acceder a votre espace de gestion.</p>
+          <p>Accedez a votre espace de gestion centralise.</p>
           <form className="form" onSubmit={submit}>
             <label>Adresse e-mail
               <span className="input-shell">
