@@ -7,24 +7,13 @@ CREATE TABLE sequences (
     derniere_valeur INT NOT NULL DEFAULT 0
 );
 
--- 2. Administration Système (SaaS)
-CREATE TABLE super_admin (
-    id_super_admin VARCHAR(50) PRIMARY KEY,
-    nom VARCHAR(100) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
-    mot_de_passe VARCHAR(255) NOT NULL
-);
-
+-- 2. Entreprise unique
 CREATE TABLE entreprise (
     id_entreprise VARCHAR(50) PRIMARY KEY,
     raison_sociale VARCHAR(200) NOT NULL,
     num_id_nationale VARCHAR(50) UNIQUE,
     email VARCHAR(150),
-    ville VARCHAR(100),
-    statut_abonnement ENUM('actif', 'suspendu', 'expire') DEFAULT 'actif',
-    date_expiration_abonnement DATE,
-    cree_par_admin_id VARCHAR(50),
-    FOREIGN KEY (cree_par_admin_id) REFERENCES super_admin(id_super_admin)
+    ville VARCHAR(100)
 );
 
 -- 3. Gestion des Utilisateurs et Clients
@@ -142,21 +131,11 @@ CREATE TABLE paiement (
     FOREIGN KEY (vente_id) REFERENCES ventes(id_ventes) ON DELETE CASCADE
 );
 
-CREATE TABLE demandes_abonnement (
-    id_demande INT AUTO_INCREMENT PRIMARY KEY,
-    entreprise_id VARCHAR(50) NOT NULL,
-    montant DECIMAL(10,2) NOT NULL,
-    monnaie VARCHAR(10) DEFAULT 'USD',
-    statut ENUM('en_attente', 'succes', 'echec') DEFAULT 'en_attente',
-    transaction_id_externe VARCHAR(100),
-    date_paiement TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (entreprise_id) REFERENCES entreprise(id_entreprise) ON DELETE CASCADE
-);
 
 -- 7. Initialisation des compteurs
 INSERT INTO sequences (nom_table, derniere_valeur) VALUES 
 ('entreprise', 0), ('utilisateur', 0), ('client', 0), 
-('super_admin', 0), ('ventes', 0), ('lignes_ventes', 0), ('paiement', 0), 
+('ventes', 0), ('lignes_ventes', 0), ('paiement', 0),
 ('mouvements_stock', 0), ('devis', 0), ('lignes_devis', 0);
 
 DELIMITER $$
@@ -168,10 +147,13 @@ CREATE TRIGGER tg_id_entreprise BEFORE INSERT ON entreprise FOR EACH ROW
 BEGIN
     DECLARE v_nb INT;
     DECLARE v_pref VARCHAR(10);
-    UPDATE sequences SET derniere_valeur = derniere_valeur + 1 WHERE nom_table = 'entreprise';
-    SELECT derniere_valeur INTO v_nb FROM sequences WHERE nom_table = 'entreprise';
-    SET v_pref = UPPER(LEFT(REPLACE(NEW.raison_sociale, ' ', ''), 3));
-    SET NEW.id_entreprise = CONCAT('ENT-', v_pref, '-', LPAD(v_nb, 4, '0'));
+
+    IF NEW.id_entreprise IS NULL OR NEW.id_entreprise = '' THEN
+        UPDATE sequences SET derniere_valeur = derniere_valeur + 1 WHERE nom_table = 'entreprise';
+        SELECT derniere_valeur INTO v_nb FROM sequences WHERE nom_table = 'entreprise';
+        SET v_pref = UPPER(LEFT(REPLACE(NEW.raison_sociale, ' ', ''), 3));
+        SET NEW.id_entreprise = CONCAT('ENT-', v_pref, '-', LPAD(v_nb, 4, '0'));
+    END IF;
 END$$
 
 -- ID Client (Ex: CLI-00001)
@@ -293,49 +275,6 @@ BEGIN
 END$$
 
 
--- 4. GESTION DES ABONNEMENTS (SaaS) --
-
--- Activation automatique de l'entreprise après succès du paiement Mobile Money
-CREATE TRIGGER tg_activation_auto_abonnement AFTER UPDATE ON demandes_abonnement FOR EACH ROW 
-BEGIN
-    IF NEW.statut = 'succes' AND OLD.statut = 'en_attente' THEN
-        UPDATE entreprise 
-        SET statut_abonnement = 'actif',
-            date_expiration_abonnement = DATE_ADD(IFNULL(date_expiration_abonnement, CURDATE()), INTERVAL 1 MONTH)
-        WHERE id_entreprise = NEW.entreprise_id;
-    END IF;
-END$$
-
--- Sécurité : Empêcher une vente si l'abonnement est expiré
-CREATE TRIGGER tg_verif_abonnement_avant_vente BEFORE INSERT ON ventes FOR EACH ROW 
-BEGIN
-    DECLARE v_statut VARCHAR(20);
-    DECLARE v_expiration DATE;
-    SELECT statut_abonnement, date_expiration_abonnement INTO v_statut, v_expiration 
-    FROM entreprise WHERE id_entreprise = NEW.entreprise_id;
-    IF v_statut != 'actif' OR v_expiration < CURDATE() THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Abonnement expiré ou suspendu.';
-    END IF;
-END$$
-
-DELIMITER ;
-
-INSERT INTO super_admin (nom, email, mot_de_passe)
-VALUES ('Super Administrateur', 'admin@crm-pme.local', SHA2('Admin@2026', 256));
-
-DELIMITER $$
-
-CREATE TRIGGER tg_id_super_admin BEFORE INSERT ON super_admin FOR EACH ROW 
-BEGIN
-    DECLARE v_nb INT;
-    -- Mise à jour du compteur spécifique au super_admin
-    UPDATE sequences SET derniere_valeur = derniere_valeur + 1 WHERE nom_table = 'super_admin';
-    SELECT derniere_valeur INTO v_nb FROM sequences WHERE nom_table = 'super_admin';
-    
-    -- Format : ADM-001
-    SET NEW.id_super_admin = CONCAT('ADM-', LPAD(v_nb, 3, '0'));
-END$$
-
 DELIMITER ;
 
 DELIMITER $$
@@ -367,35 +306,6 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
-
--- 1. SAAS : CRÉATION D'UNE ENTREPRISE AVEC SON PREMIER GÉRANT
--- Cette procédure crée l'entreprise ET l'utilisateur administrateur en une fois.
-CREATE PROCEDURE sp_Admin_CreerEntrepriseComplete(
-    IN p_raison_sociale VARCHAR(200),
-    IN p_email_ent VARCHAR(150),
-    IN p_id_nationale VARCHAR(50),
-    IN p_ville VARCHAR(100),
-    IN p_admin_id VARCHAR(50), -- ID du SuperAdmin qui crée
-    IN p_nom_gerant VARCHAR(100),
-    IN p_email_gerant VARCHAR(150),
-    IN p_mdp_gerant VARCHAR(255)
-)
-BEGIN
-    DECLARE v_new_ent_id VARCHAR(50);
-    
-    START TRANSACTION;
-        -- Création de l'entreprise (L'ID est généré par le trigger)
-        INSERT INTO entreprise (raison_sociale, num_id_nationale, email, ville, cree_par_admin_id, statut_abonnement, date_expiration_abonnement)
-        VALUES (p_raison_sociale, p_id_nationale, p_email_ent, p_ville, p_admin_id, 'actif', DATE_ADD(CURDATE(), INTERVAL 1 MONTH));
-
-        -- Récupération de l'ID généré pour l'utilisateur
-        SET v_new_ent_id = (SELECT id_entreprise FROM entreprise WHERE num_id_nationale = p_id_nationale);
-
-        -- Création du gérant (Rôle Manager)
-        INSERT INTO utilisateur (entreprise_id, nom, email, mot_de_passe, role, actif)
-        VALUES (v_new_ent_id, p_nom_gerant, p_email_gerant, p_mdp_gerant, 'manager', TRUE);
-    COMMIT;
-END$$
 
 -- 2. VENTES : TRANSFORMER UN DEVIS EN FACTURE
 -- Évite de ressaisir toutes les lignes de produits.
@@ -466,23 +376,6 @@ BEGIN
         INSERT INTO mouvements_stock (id_mouvement, produit_id, type_mouvement, quantite)
         VALUES (CONCAT('MVT-', LPAD(v_nb, 6, '0')), p_produit_id, 'entree', p_quantite);
     COMMIT;
-END$$
-
--- 5. ADMIN : GÉRER LES ABONNEMENTS
-CREATE PROCEDURE sp_Admin_ModifierAbonnement(
-    IN p_ent_id VARCHAR(50),
-    IN p_action ENUM('ACTIVER', 'SUSPENDRE'),
-    IN p_mois INT
-)
-BEGIN
-    IF p_action = 'ACTIVER' THEN
-        UPDATE entreprise 
-        SET statut_abonnement = 'actif', 
-            date_expiration_abonnement = DATE_ADD(CURDATE(), INTERVAL p_mois MONTH)
-        WHERE id_entreprise = p_ent_id;
-    ELSE
-        UPDATE entreprise SET statut_abonnement = 'suspendu' WHERE id_entreprise = p_ent_id;
-    END IF;
 END$$
 
 DELIMITER ;
@@ -586,19 +479,6 @@ JOIN ventes v ON p.vente_id = v.id_ventes
 JOIN entreprise e ON v.entreprise_id = e.id_entreprise
 GROUP BY e.id_entreprise, p.mode_paiement;
 
--- Monitoring de la plateforme SaaS
-CREATE OR REPLACE VIEW v_superadmin_entreprises_stats AS
-SELECT 
-    e.id_entreprise AS "ID",
-    e.raison_sociale AS "Entreprise",
-    e.ville AS "Ville",
-    e.statut_abonnement AS "Statut",
-    e.date_expiration_abonnement AS "Expire_le",
-    DATEDIFF(e.date_expiration_abonnement, CURDATE()) AS "Jours_Restants",
-    (SELECT COUNT(*) FROM utilisateur u WHERE u.entreprise_id = e.id_entreprise) AS "Employes",
-    (SELECT COUNT(*) FROM ventes v WHERE v.entreprise_id = e.id_entreprise) AS "Nombre_Ventes",
-    IFNULL((SELECT SUM(montant_ttc) FROM ventes v WHERE v.entreprise_id = e.id_entreprise), 0) AS "CA_Total_USD"
-FROM entreprise e;
 
 CREATE OR REPLACE VIEW v_rapport_caisse_journalier AS
 SELECT 

@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto'; // ✅ Import correct
 
 import { sendMail } from '../services/mailService.js';
-import { notifyEnterpriseAdmins, notifySuperAdmins } from '../services/notificationService.js';
+import { notifyEnterpriseAdmins } from '../services/notificationService.js';
 
 const generateToken = (user) => {
     return jwt.sign(
@@ -15,7 +15,7 @@ const generateToken = (user) => {
             role:          user.role, 
             entreprise_id: user.entreprise_id,
             nom:           user.nom,
-            type:          'utilisateur'  // ✅ Important pour distinguer du super_admin
+            type:          'utilisateur'
         },
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
@@ -73,19 +73,6 @@ export const login = async (req, res) => {
             });
         }
 
-        // Vérifie l'abonnement
-        const [entreprise] = await pool.query(
-            'SELECT statut_abonnement, date_expiration_abonnement FROM entreprise WHERE id_entreprise = ?',
-            [user.entreprise_id]
-        );
-
-        if (!entreprise[0] || entreprise[0].statut_abonnement !== 'actif') {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Abonnement expiré ou suspendu. Contactez votre administrateur.' 
-            });
-        }
-
         const token = generateToken(user);
 
         res.json({
@@ -117,8 +104,8 @@ export const getMe = async (req, res) => {
                     u.entreprise_id, e.raison_sociale AS entreprise_nom
              FROM utilisateur u
              JOIN entreprise e ON u.entreprise_id = e.id_entreprise
-             WHERE u.id_utilisateur = ?`,
-            [req.user.id]
+             WHERE u.id_utilisateur = ? AND u.entreprise_id = ?`,
+            [req.user.id, req.user.entreprise_id]
         );
 
         if (users.length === 0) {
@@ -180,13 +167,11 @@ export const resetRequestedPassword = async (req, res) => {
         const params = [email];
         let scope = '';
 
-        if (req.user?.type !== 'super_admin') {
-            if (req.user?.role !== 'manager') {
-                return res.status(403).json({ success: false, message: 'Seul un manager peut reinitialiser un mot de passe utilisateur.' });
-            }
-            scope = ' AND u.entreprise_id = ?';
-            params.push(req.user.entreprise_id);
+        if (req.user?.role !== 'manager') {
+            return res.status(403).json({ success: false, message: 'Seul un manager peut reinitialiser un mot de passe utilisateur.' });
         }
+        scope = ' AND u.entreprise_id = ?';
+        params.push(req.user.entreprise_id);
 
         const [users] = await pool.query(
             `SELECT u.id_utilisateur, u.nom, u.email, u.role, e.raison_sociale
@@ -243,24 +228,9 @@ export const forgotPassword = async (req, res) => {
         const titre = 'Demande de recuperation de mot de passe';
         const reason = motif ? ` Motif: ${motif}` : '';
         const message = `${user.nom} (${user.email}) demande la recuperation de son mot de passe.${reason}`;
+        await notifyEnterpriseAdmins({ entreprise_id: user.entreprise_id, titre, message });
 
-        if (user.role === 'manager') {
-            await notifySuperAdmins({
-                titre,
-                message: `${message} Entreprise: ${user.raison_sociale}.`,
-                entreprise_id: user.entreprise_id
-            });
-            await sendMail({
-                to: user.email,
-                subject: 'Demande de recuperation recue - CRM PME',
-                text: 'Votre demande de recuperation a ete recue. Le super administrateur peut vous assister.',
-                html: '<p>Votre demande de recuperation a ete recue. Le super administrateur peut vous assister.</p>'
-            }).catch(() => null);
-        } else {
-            await notifyEnterpriseAdmins({ entreprise_id: user.entreprise_id, titre, message });
-        }
-
-        res.json({ success: true, message: user.role === 'manager' ? 'Demande envoyee au super administrateur.' : 'Demande envoyee a votre administrateur.' });
+        res.json({ success: true, message: 'Demande envoyee au manager.' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

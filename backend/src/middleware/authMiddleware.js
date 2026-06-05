@@ -38,37 +38,3 @@ export const authorizeRoles = (...roles) => {
         next();
     };
 };
-
-// ✅ Vérifie si c'est un Super Admin
-export const protectSuperAdmin = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ 
-            success: false, 
-            message: 'Accès refusé. Token manquant.' 
-        });
-    }
-
-    const token = authHeader.split(' ')[1];
-
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
-        // Vérifie que c'est bien un super admin
-        if (decoded.type !== 'super_admin') {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Accès réservé aux Super Administrateurs.' 
-            });
-        }
-
-        req.superAdmin = decoded;
-        next();
-    } catch (err) {
-        return res.status(401).json({ 
-            success: false, 
-            message: 'Token invalide ou expiré.' 
-        });
-    }
-};

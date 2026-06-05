@@ -41,7 +41,6 @@ const getActionLabel = (method, path) => {
     if (path.includes('/approvisionner')) return 'a ajoute un approvisionnement';
     if (path.includes('/change-password')) return 'a change son mot de passe';
     if (path.includes('/reset-request-password')) return 'a reinitialise un mot de passe utilisateur';
-    if (path.includes('/abonnement')) return 'a modifie un abonnement';
     if (path.includes('/mail/notify-team')) return 'a envoye une notification a toute l equipe';
     if (path.includes('/mail/send')) return 'a envoye un email';
 
@@ -52,8 +51,7 @@ const getActionLabel = (method, path) => {
         devis: 'devis',
         ventes: 'facture',
         paiements: 'paiement',
-        utilisateurs: 'utilisateur',
-        'super-admin': 'espace super admin'
+        utilisateurs: 'utilisateur'
     };
     const { module } = getEntityFromPath(path);
     const label = moduleLabels[module] || module || 'element';

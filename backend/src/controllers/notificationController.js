@@ -2,24 +2,14 @@ import pool from '../config/db.js';
 
 export const getNotifications = async (req, res) => {
     try {
-        let rows;
-        if (req.user?.type === 'super_admin') {
-            [rows] = await pool.query(
-                `SELECT * FROM notifications
-                 WHERE recipient_type = 'super_admin'
-                 ORDER BY created_at DESC
-                 LIMIT 30`
-            );
-        } else {
-            [rows] = await pool.query(
-                `SELECT * FROM notifications
-                 WHERE recipient_user_id = ?
-                    OR (recipient_type = 'enterprise_admin' AND entreprise_id = ?)
-                 ORDER BY created_at DESC
-                 LIMIT 30`,
-                [req.user.id, req.user.entreprise_id]
-            );
-        }
+        const [rows] = await pool.query(
+            `SELECT * FROM notifications
+             WHERE recipient_user_id = ?
+                OR (recipient_type = 'manager' AND entreprise_id = ?)
+             ORDER BY created_at DESC
+             LIMIT 30`,
+            [req.user.id, req.user.entreprise_id]
+        );
 
         res.json({ success: true, data: rows });
     } catch (error) {

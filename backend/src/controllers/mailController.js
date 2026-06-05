@@ -13,21 +13,13 @@ export const getMailStatus = (req, res) => {
 
 export const getMailMessages = async (req, res) => {
     try {
-        const params = [];
-        let where = '';
-
-        if (req.user?.type !== 'super_admin') {
-            where = 'WHERE entreprise_id = ?';
-            params.push(req.user.entreprise_id);
-        }
-
         const [rows] = await pool.query(
             `SELECT id_mail, sender_email, to_email, subject, message, status, created_at
              FROM mail_messages
-             ${where}
+             WHERE entreprise_id = ?
              ORDER BY created_at DESC
              LIMIT 60`,
-            params
+            [req.user.entreprise_id]
         );
 
         res.json({ success: true, data: rows });

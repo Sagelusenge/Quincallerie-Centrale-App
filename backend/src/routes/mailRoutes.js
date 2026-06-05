@@ -1,36 +1,20 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
 import { getMailStatus, getMailMessages, sendCustomMail, sendTeamNotification } from '../controllers/mailController.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-const protectAny = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ success: false, message: 'Acces refuse. Token manquant.' });
-    }
-
-    try {
-        const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch (error) {
-        return res.status(401).json({ success: false, message: 'Token invalide ou expire.' });
-    }
-};
-
 const authorizeMailSender = (req, res, next) => {
-    if (req.user.type === 'super_admin' || req.user.role === 'manager') return next();
+    if (req.user.role === 'manager') return next();
     return res.status(403).json({
         success: false,
-        message: 'Seul le manager de l entreprise ou le super administrateur peut envoyer des emails.'
+        message: 'Seul le manager peut envoyer des emails.'
     });
 };
 
-router.get('/status', protectAny, getMailStatus);
-router.get('/messages', protectAny, authorizeMailSender, getMailMessages);
-router.post('/send', protectAny, authorizeMailSender, sendCustomMail);
-router.post('/notify-team', protectAny, authorizeMailSender, sendTeamNotification);
+router.get('/status', protect, getMailStatus);
+router.get('/messages', protect, authorizeMailSender, getMailMessages);
+router.post('/send', protect, authorizeMailSender, sendCustomMail);
+router.post('/notify-team', protect, authorizeMailSender, sendTeamNotification);
 
 export default router;

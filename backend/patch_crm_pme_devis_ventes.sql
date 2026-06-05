@@ -1,7 +1,6 @@
 USE crm_pme;
 
 INSERT INTO sequences (nom_table, derniere_valeur) VALUES
-('super_admin', 0),
 ('utilisateur', 0),
 ('lignes_devis', 0),
 ('lignes_ventes', 0)

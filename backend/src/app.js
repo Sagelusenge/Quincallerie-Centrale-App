@@ -12,11 +12,11 @@ import devisRoutes from './routes/devisRoutes.js';
 import venteRoutes from './routes/venteRoutes.js';
 import paiementRoutes from './routes/paiementRoutes.js';
 import rapportRoutes from './routes/rapportRoutes.js';
-import superAdminRoutes from './routes/superAdminRoutes.js';
 import utilisateurRoutes from './routes/utilisateurRoutes.js';
 import mailRoutes from './routes/mailRoutes.js';
 import categorieRoutes from './routes/categorieRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import setupRoutes from './routes/setupRoutes.js';
 
 dotenv.config();
 
@@ -47,9 +47,9 @@ app.use('/api/devis', devisRoutes);
 app.use('/api/ventes', venteRoutes);
 app.use('/api/paiements', paiementRoutes);
 app.use('/api/rapports', rapportRoutes);
-app.use('/api/super-admin', superAdminRoutes);
 app.use('/api/mail', mailRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/setup', setupRoutes);
 
 app.get('/api/health', (req, res) => {
     res.json({ success: true, message: 'CRM PME API operationnelle' });

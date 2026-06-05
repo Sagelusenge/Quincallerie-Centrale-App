@@ -15,7 +15,7 @@ export const ensureRuntimeSchema = async (pool) => {
     await pool.query(`
         CREATE TABLE IF NOT EXISTS notifications (
             id_notification INT AUTO_INCREMENT PRIMARY KEY,
-            recipient_type ENUM('user','super_admin','enterprise_admin') NOT NULL DEFAULT 'user',
+            recipient_type ENUM('user','manager') NOT NULL DEFAULT 'user',
             recipient_user_id VARCHAR(50),
             entreprise_id VARCHAR(50),
             titre VARCHAR(160) NOT NULL,
@@ -76,7 +76,7 @@ export const ensureRuntimeSchema = async (pool) => {
         }
     };
 
-    await addColumnIfMissing('notifications', 'recipient_type', "ENUM('user','super_admin','enterprise_admin') NOT NULL DEFAULT 'user'");
+    await addColumnIfMissing('notifications', 'recipient_type', "ENUM('user','manager') NOT NULL DEFAULT 'user'");
     await addColumnIfMissing('notifications', 'recipient_user_id', 'VARCHAR(50) NULL');
     await addColumnIfMissing('notifications', 'entreprise_id', 'VARCHAR(50) NULL');
     await addColumnIfMissing('notifications', 'titre', "VARCHAR(160) NOT NULL DEFAULT 'Notification'");
@@ -125,4 +125,15 @@ export const ensureRuntimeSchema = async (pool) => {
         SET reference_categorie = LEFT(id_categorie, 50)
         WHERE reference_categorie IS NULL OR reference_categorie = ''
     `);
+
+    await pool.query(`
+        UPDATE notifications
+        SET recipient_type = 'manager'
+        WHERE recipient_type <> 'user'
+    `).catch(() => null);
+
+    await pool.query(`
+        ALTER TABLE notifications
+        MODIFY recipient_type ENUM('user','manager') NOT NULL DEFAULT 'user'
+    `).catch(() => null);
 };

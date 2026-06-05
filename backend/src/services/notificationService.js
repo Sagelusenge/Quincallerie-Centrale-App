@@ -25,12 +25,3 @@ export const notifyEnterpriseAdmins = async ({ entreprise_id, titre, message }) 
         });
     }
 };
-
-export const notifySuperAdmins = async ({ titre, message, entreprise_id = null }) => {
-    await createNotification({
-        recipient_type: 'super_admin',
-        entreprise_id,
-        titre,
-        message
-    });
-};
