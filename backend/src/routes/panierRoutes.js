@@ -1,13 +1,13 @@
 import express from 'express';
 import {
-    getAllDevis,
-    getDevisById,
-    createDevis,
-    updateDevis,
-    convertirDevis,
-    annulerDevis,
-    deleteDevis
-} from '../controllers/devisController.js';
+    getAllPaniers,
+    getPanierById,
+    createPanier,
+    updatePanier,
+    convertirPanier,
+    annulerPanier,
+    deletePanier
+} from '../controllers/panierController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -15,43 +15,43 @@ const router = express.Router();
 router.get('/',
     protect,
     authorizeRoles('manager', 'caissier'),
-    getAllDevis
+    getAllPaniers
 );
 
 router.get('/:id',
     protect,
     authorizeRoles('manager', 'caissier'),
-    getDevisById
+    getPanierById
 );
 
 router.post('/',
     protect,
     authorizeRoles('manager', 'caissier'),
-    createDevis
+    createPanier
 );
 
 router.put('/:id',
     protect,
     authorizeRoles('manager', 'caissier'),
-    updateDevis
+    updatePanier
 );
 
 router.post('/:id/convertir',
     protect,
     authorizeRoles('manager', 'caissier'),
-    convertirDevis
+    convertirPanier
 );
 
 router.put('/:id/annuler',
     protect,
     authorizeRoles('manager'),
-    annulerDevis
+    annulerPanier
 );
 
 router.delete('/:id',
     protect,
     authorizeRoles('manager'),
-    deleteDevis
+    deletePanier
 );
 
 export default router;

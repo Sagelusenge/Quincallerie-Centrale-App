@@ -462,23 +462,23 @@ Body:
 
 Roles: `manager`.
 
-## Devis
+## Paniers
 
 ### Liste
 
-`GET /api/devis`
+`GET /api/paniers`
 
 Roles: `manager`, `caissier`.
 
 ### Detail
 
-`GET /api/devis/:id`
+`GET /api/paniers/:id`
 
 Roles: `manager`, `caissier`.
 
 ### Creer
 
-`POST /api/devis`
+`POST /api/paniers`
 
 Roles: `manager`, `caissier`.
 
@@ -501,15 +501,15 @@ Body:
 
 ### Modifier
 
-`PUT /api/devis/:id`
+`PUT /api/paniers/:id`
 
 Roles: `manager`, `caissier`.
 
-Possible seulement si le devis est `en_attente`.
+Possible seulement si le panier est `en_attente`.
 
 ### Convertir en facture
 
-`POST /api/devis/:id/convertir`
+`POST /api/paniers/:id/convertir`
 
 Roles: `manager`, `caissier`.
 
@@ -517,17 +517,17 @@ Le backend verifie le stock puis cree une facture.
 
 ### Annuler
 
-`PUT /api/devis/:id/annuler`
+`PUT /api/paniers/:id/annuler`
 
 Roles: `manager`.
 
 ### Supprimer
 
-`DELETE /api/devis/:id`
+`DELETE /api/paniers/:id`
 
 Roles: `manager`.
 
-Possible seulement si le devis est `en_attente`.
+Possible seulement si le panier est `en_attente`.
 
 ## Ventes / factures
 

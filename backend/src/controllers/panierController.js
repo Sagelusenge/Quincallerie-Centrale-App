@@ -14,8 +14,18 @@ const nextId = async (connection, nomTable, prefix, size = 5) => {
     return `${prefix}-${String(rows[0].derniere_valeur).padStart(size, '0')}`;
 };
 
-// GET /api/devis
-export const getAllDevis = async (req, res) => {
+const formatPanier = (row) => {
+    if (!row) return row;
+    return {
+        ...row,
+        id_panier: row.id_devis,
+        numero_panier: row.numero_devis,
+        date_panier: row.date_devis
+    };
+};
+
+// GET /api/paniers
+export const getAllPaniers = async (req, res) => {
     const entreprise_id = req.user.entreprise_id;
     try {
         const [rows] = await pool.query(
@@ -26,18 +36,18 @@ export const getAllDevis = async (req, res) => {
              ORDER BY d.date_devis DESC`,
             [entreprise_id]
         );
-        res.json({ success: true, data: rows });
+        res.json({ success: true, data: rows.map(formatPanier) });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
 
-// GET /api/devis/:id
-export const getDevisById = async (req, res) => {
+// GET /api/paniers/:id
+export const getPanierById = async (req, res) => {
     const { id } = req.params;
     const entreprise_id = req.user.entreprise_id;
     try {
-        const [devis] = await pool.query(
+        const [panier] = await pool.query(
             `SELECT d.*, c.nom AS client_nom, c.telephone AS client_tel,
                     e.raison_sociale AS entreprise_nom, e.ville AS entreprise_ville
              FROM devis d
@@ -47,8 +57,8 @@ export const getDevisById = async (req, res) => {
             [id, entreprise_id]
         );
 
-        if (devis.length === 0) {
-            return res.status(404).json({ success: false, message: 'Devis non trouve' });
+        if (panier.length === 0) {
+            return res.status(404).json({ success: false, message: 'Panier non trouve' });
         }
 
         const [lignes] = await pool.query(
@@ -59,14 +69,14 @@ export const getDevisById = async (req, res) => {
             [id, entreprise_id]
         );
 
-        res.json({ success: true, data: { ...devis[0], lignes } });
+        res.json({ success: true, data: { ...formatPanier(panier[0]), lignes } });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
 
-// POST /api/devis
-export const createDevis = async (req, res) => {
+// POST /api/paniers
+export const createPanier = async (req, res) => {
     const { client_id, lignes } = req.body;
     const entreprise_id = req.user.entreprise_id;
 
@@ -94,7 +104,7 @@ export const createDevis = async (req, res) => {
         const [seq] = await connection.query(
             `SELECT derniere_valeur FROM sequences WHERE nom_table = 'devis'`
         );
-        const id_devis = `DEV-${String(seq[0].derniere_valeur).padStart(5, '0')}`;
+        const id_panier = `DEV-${String(seq[0].derniere_valeur).padStart(5, '0')}`;
 
         for (const ligne of lignes) {
             const quantite = toNumber(ligne.quantite);
@@ -124,15 +134,16 @@ export const createDevis = async (req, res) => {
                 `INSERT INTO lignes_devis
                  (id_lignes_devis, devis_id, produit_id, quantite, prix_unitaire_ht)
                  VALUES (?, ?, ?, ?, ?)`,
-                [id_ligne, id_devis, ligne.produit_id, quantite, prix]
+                [id_ligne, id_panier, ligne.produit_id, quantite, prix]
             );
         }
 
         await connection.commit();
         res.status(201).json({
             success: true,
-            message: 'Devis cree avec succes',
-            id_devis
+            message: 'Panier cree avec succes',
+            id_panier,
+            panier: id_panier
         });
     } catch (error) {
         await connection.rollback();
@@ -142,8 +153,8 @@ export const createDevis = async (req, res) => {
     }
 };
 
-// PUT /api/devis/:id
-export const updateDevis = async (req, res) => {
+// PUT /api/paniers/:id
+export const updatePanier = async (req, res) => {
     const { id } = req.params;
     const { client_id, lignes } = req.body;
     const entreprise_id = req.user.entreprise_id;
@@ -156,19 +167,19 @@ export const updateDevis = async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        const [devisRows] = await connection.query(
+        const [panierRows] = await connection.query(
             `SELECT id_devis, statut FROM devis WHERE id_devis = ? AND entreprise_id = ? FOR UPDATE`,
             [id, entreprise_id]
         );
 
-        if (devisRows.length === 0) {
+        if (panierRows.length === 0) {
             await connection.rollback();
-            return res.status(404).json({ success: false, message: 'Devis non trouve' });
+            return res.status(404).json({ success: false, message: 'Panier non trouve' });
         }
 
-        if (devisRows[0].statut !== 'en_attente') {
+        if (panierRows[0].statut !== 'en_attente') {
             await connection.rollback();
-            return res.status(400).json({ success: false, message: 'Seul un devis en attente peut etre modifie' });
+            return res.status(400).json({ success: false, message: 'Seul un panier en attente peut etre modifie' });
         }
 
         const [clients] = await connection.query(
@@ -216,7 +227,7 @@ export const updateDevis = async (req, res) => {
         }
 
         await connection.commit();
-        res.json({ success: true, message: 'Devis mis a jour' });
+        res.json({ success: true, message: 'Panier mis a jour' });
     } catch (error) {
         await connection.rollback();
         res.status(500).json({ success: false, message: error.message });
@@ -225,8 +236,8 @@ export const updateDevis = async (req, res) => {
     }
 };
 
-// POST /api/devis/:id/convertir
-export const convertirDevis = async (req, res) => {
+// POST /api/paniers/:id/convertir
+export const convertirPanier = async (req, res) => {
     const { id } = req.params;
     const entreprise_id = req.user.entreprise_id;
     const connection = await pool.getConnection();
@@ -234,7 +245,7 @@ export const convertirDevis = async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        const [devisRows] = await connection.query(
+        const [panierRows] = await connection.query(
             `SELECT id_devis, client_id, statut
              FROM devis
              WHERE id_devis = ? AND entreprise_id = ?
@@ -242,14 +253,14 @@ export const convertirDevis = async (req, res) => {
             [id, entreprise_id]
         );
 
-        if (devisRows.length === 0) {
+        if (panierRows.length === 0) {
             await connection.rollback();
-            return res.status(404).json({ success: false, message: 'Devis non trouve' });
+            return res.status(404).json({ success: false, message: 'Panier non trouve' });
         }
 
-        if (devisRows[0].statut !== 'en_attente') {
+        if (panierRows[0].statut !== 'en_attente') {
             await connection.rollback();
-            return res.status(400).json({ success: false, message: 'Le devis ne peut plus etre converti.' });
+            return res.status(400).json({ success: false, message: 'Le panier ne peut plus etre converti.' });
         }
 
         const [lignes] = await connection.query(
@@ -261,7 +272,7 @@ export const convertirDevis = async (req, res) => {
         );
 
         if (lignes.length === 0) {
-            throw new Error('Impossible de convertir un devis sans lignes.');
+            throw new Error('Impossible de convertir un panier sans lignes.');
         }
 
         for (const ligne of lignes) {
@@ -283,7 +294,7 @@ export const convertirDevis = async (req, res) => {
         await connection.query(
             `INSERT INTO ventes (client_id, entreprise_id, montant_ttc)
              VALUES (?, ?, 0)`,
-            [devisRows[0].client_id, entreprise_id]
+            [panierRows[0].client_id, entreprise_id]
         );
 
         const [seq] = await connection.query(
@@ -309,7 +320,7 @@ export const convertirDevis = async (req, res) => {
         await connection.commit();
         res.json({
             success: true,
-            message: 'Devis converti en facture avec succes',
+            message: 'Panier converti en facture avec succes',
             facture: facture_id
         });
     } catch (error) {
@@ -320,8 +331,8 @@ export const convertirDevis = async (req, res) => {
     }
 };
 
-// PUT /api/devis/:id/annuler
-export const annulerDevis = async (req, res) => {
+// PUT /api/paniers/:id/annuler
+export const annulerPanier = async (req, res) => {
     const { id } = req.params;
     const entreprise_id = req.user.entreprise_id;
     try {
@@ -333,17 +344,17 @@ export const annulerDevis = async (req, res) => {
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ success: false, message: 'Devis non trouve ou deja traite' });
+            return res.status(404).json({ success: false, message: 'Panier non trouve ou deja traite' });
         }
 
-        res.json({ success: true, message: 'Devis annule' });
+        res.json({ success: true, message: 'Panier annule' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
 
-// DELETE /api/devis/:id
-export const deleteDevis = async (req, res) => {
+// DELETE /api/paniers/:id
+export const deletePanier = async (req, res) => {
     const { id } = req.params;
     const entreprise_id = req.user.entreprise_id;
 
@@ -354,10 +365,10 @@ export const deleteDevis = async (req, res) => {
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ success: false, message: 'Devis non trouve ou deja traite' });
+            return res.status(404).json({ success: false, message: 'Panier non trouve ou deja traite' });
         }
 
-        res.json({ success: true, message: 'Devis supprime' });
+        res.json({ success: true, message: 'Panier supprime' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

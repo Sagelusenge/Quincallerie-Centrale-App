@@ -35,8 +35,8 @@ const getEntityFromPath = (path) => {
 };
 
 const getActionLabel = (method, path) => {
-    if (path.includes('/convertir')) return 'a converti un devis en facture';
-    if (path.includes('/annuler')) return 'a annule un devis';
+    if (path.includes('/convertir')) return 'a converti un panier en facture';
+    if (path.includes('/annuler')) return 'a annule un panier';
     if (path.includes('/toggle')) return 'a change le statut d’un utilisateur';
     if (path.includes('/approvisionner')) return 'a ajoute un approvisionnement';
     if (path.includes('/change-password')) return 'a change son mot de passe';
@@ -48,7 +48,7 @@ const getActionLabel = (method, path) => {
         clients: 'client',
         produits: 'produit',
         categories: 'categorie',
-        devis: 'devis',
+        paniers: 'panier',
         ventes: 'facture',
         paiements: 'paiement',
         utilisateurs: 'utilisateur'

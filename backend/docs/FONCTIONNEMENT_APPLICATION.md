@@ -2,7 +2,7 @@
 
 ## Vision generale
 
-CRM PME est une application de gestion commerciale destinee aux petites et moyennes entreprises. Le systeme gere les clients, les produits, le stock, les devis, les ventes, les paiements, les rapports, les utilisateurs et les notifications.
+CRM PME est une application de gestion commerciale destinee aux petites et moyennes entreprises. Le systeme gere les clients, les produits, le stock, les paniers, les ventes, les paiements, les rapports, les utilisateurs et les notifications.
 
 L'application n'est pas un SaaS centralise. Chaque entreprise cliente recoit sa propre installation avec sa propre base de donnees. Une installation correspond donc a une seule entreprise.
 
@@ -25,9 +25,9 @@ Pour eviter qu'une personne non autorisee cree l'entreprise avant le vrai client
 
 Le systeme utilise trois roles:
 
-`manager`: admin interne de l'entreprise. Il gere les utilisateurs, les clients, les produits, les devis, les ventes, les paiements, les rapports et les mails.
+`manager`: admin interne de l'entreprise. Il gere les utilisateurs, les clients, les produits, les paniers, les ventes, les paiements, les rapports et les mails.
 
-`caissier`: utilisateur oriente vente/caisse. Il peut gerer les clients, devis, ventes, paiements et consulter certains rapports.
+`caissier`: utilisateur oriente vente/caisse. Il peut gerer les clients, paniers, ventes, paiements et consulter certains rapports.
 
 `magasinier`: utilisateur oriente stock. Il peut gerer les produits, categories, approvisionnements, mouvements de stock et consulter les alertes/inventaires.
 
@@ -84,7 +84,7 @@ Le dashboard donne les indicateurs importants:
 - total clients;
 - alertes stock;
 - chiffre d'affaires du mois;
-- devis en attente;
+- paniers en attente;
 - creances;
 - ventes mensuelles;
 - produits les plus vendus.
@@ -97,18 +97,18 @@ Le module clients permet de creer, consulter, modifier et supprimer les clients.
 
 Les categories classent les produits. Les produits contiennent la reference, le nom, la categorie, le prix, la TVA, la photo, le stock disponible et le seuil d'alerte.
 
-Le stock diminue automatiquement lors d'une vente ou lors de la conversion d'un devis en facture. Il augmente via l'approvisionnement.
+Le stock diminue automatiquement lors d'une vente ou lors de la conversion d'un panier en facture. Il augmente via l'approvisionnement.
 
-### Devis
+### Paniers
 
-Un devis est cree pour un client avec une ou plusieurs lignes de produits. Un devis commence avec le statut `en_attente`.
+Un panier est cree pour un client avec une ou plusieurs lignes de produits. Un panier commence avec le statut `en_attente`.
 
 Actions possibles:
 
-- modifier un devis tant qu'il est en attente;
-- annuler un devis en attente;
-- convertir un devis en facture;
-- supprimer un devis en attente.
+- modifier un panier tant qu'il est en attente;
+- annuler un panier en attente;
+- convertir un panier en facture;
+- supprimer un panier en attente.
 
 Lors de la conversion, le systeme verifie le stock. Si le stock est suffisant, une facture est creee et le stock est diminue.
 

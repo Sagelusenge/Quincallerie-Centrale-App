@@ -61,7 +61,7 @@ export const sendWelcomeUserEmail = async ({ to, name, role, password, company }
         '',
         'Pour votre securite, veuillez vous connecter puis remplacer ce mot de passe temporaire par un mot de passe personnel.',
         '',
-        'CRM PME centralise les clients, devis, factures, paiements et stocks de votre entreprise.',
+        'CRM PME centralise les clients, paniers, factures, paiements et stocks de votre entreprise.',
         '',
         'Cordialement,',
         'Equipe CRM PME'
@@ -83,7 +83,7 @@ export const sendWelcomeUserEmail = async ({ to, name, role, password, company }
                         ${password ? `<p style="margin:0"><strong>Mot de passe temporaire :</strong> ${escapeHtml(password)}</p>` : ''}
                     </div>
                     <p style="margin:0 0 12px">Pour votre securite, connectez-vous puis remplacez ce mot de passe temporaire par un mot de passe personnel.</p>
-                    <p style="margin:0">CRM PME vous permet de centraliser les clients, devis, factures, paiements et stocks de votre entreprise.</p>
+                    <p style="margin:0">CRM PME vous permet de centraliser les clients, paniers, factures, paiements et stocks de votre entreprise.</p>
                     <p style="margin:24px 0 0">Cordialement,<br><strong>Equipe CRM PME</strong></p>
                 </div>
             </div>

@@ -19,6 +19,8 @@ export const getStats = async (req, res) => {
         );
 
         const stats = results[0][0];
+        stats.paniers_en_attente = stats.devis_en_attente;
+        delete stats.devis_en_attente;
 
         const [[comparaison]] = await pool.query(
             `SELECT
