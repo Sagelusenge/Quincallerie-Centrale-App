@@ -35,8 +35,8 @@ Body:
 
 ```json
 {
-  "email": "manager@client.local",
-  "password": "Manager@2026"
+  "email": "sagelusenge@gmail.com",
+  "password": "Bonsoirs"
 }
 ```
 
@@ -49,8 +49,8 @@ Reponse:
   "token": "jwt",
   "user": {
     "id": "USR-00001",
-    "nom": "Manager Principal",
-    "email": "manager@client.local",
+    "nom": "kitsa",
+    "email": "sagelusenge@gmail.com",
     "role": "manager",
     "entreprise_id": "ENT-CLI-0001",
     "entreprise_nom": "Entreprise Cliente",
@@ -185,9 +185,9 @@ Body:
   "num_id_nationale": "CD-KIN-2026-001",
   "email_entreprise": "contact@client.local",
   "ville": "Kinshasa",
-  "nom_manager": "Manager Principal",
-  "email_manager": "manager@client.local",
-  "mot_de_passe_manager": "Manager@2026",
+  "nom_manager": "kitsa",
+  "email_manager": "sagelusenge@gmail.com",
+  "mot_de_passe_manager": "Bonsoirs",
   "setup_code": "first-install-code"
 }
 ```
