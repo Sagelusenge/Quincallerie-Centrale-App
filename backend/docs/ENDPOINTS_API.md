@@ -115,6 +115,17 @@ Ces endpoints servent au premier lancement de l'application. Le front/mobile doi
 
 Une fois l'entreprise et le manager crees, le setup est verrouille definitivement pour cette base de donnees. Toute nouvelle tentative de creation retourne `409`.
 
+Ces endpoints sont publics et ne demandent pas de token, car au moment du premier lancement aucun utilisateur n'est encore connecte. Le backend ne devine pas l'etat du setup avec un token: il regarde directement la base de donnees.
+
+La verification utilise la logique suivante:
+
+```txt
+entreprises = nombre de lignes dans entreprise
+managers_actifs = nombre d'utilisateurs actifs avec role manager
+```
+
+Si `entreprises > 0` ou `managers_actifs > 0`, le setup est considere comme deja effectue. Le front/mobile doit alors afficher l'ecran de connexion, pas l'ecran de creation d'entreprise.
+
 Protection optionnelle: si `SETUP_CODE` est defini dans `.env`, le front/mobile doit envoyer ce code pendant la creation initiale, soit dans le body avec `setup_code`, soit dans le header `X-Setup-Code`.
 
 ### Statut setup
@@ -202,6 +213,8 @@ Reponse si la configuration existe deja:
   "message": "Configuration deja effectuee. Accedez a la page de connexion."
 }
 ```
+
+Cette reponse arrive meme sans token si la base contient deja une entreprise ou un manager actif. C'est le comportement normal du projet.
 
 ## Dashboard
 

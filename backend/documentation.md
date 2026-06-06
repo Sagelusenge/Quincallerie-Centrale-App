@@ -27,6 +27,14 @@ Si `setup_available` vaut `false`, afficher directement l'ecran de connexion.
 
 Si `SETUP_CODE` est defini dans `.env`, l'ecran de creation doit demander ce code et l'envoyer avec la creation initiale.
 
+Le statut du setup ne depend pas d'un token. Le backend regarde directement la base:
+
+```txt
+entreprise > 0 ou manager actif > 0
+```
+
+Si cette condition est vraie, l'installation est deja configuree et la creation initiale est bloquee.
+
 ## Creation initiale de l'entreprise
 
 ```txt
@@ -47,7 +55,7 @@ Content-Type: application/json
 }
 ```
 
-Apres une creation reussie, `/api/setup/company` est verrouille et retourne `409` pour toute nouvelle tentative.
+Apres une creation reussie, `/api/setup/company` est verrouille et retourne `409` pour toute nouvelle tentative, meme si la requete est envoyee sans token.
 
 ## Authentification
 

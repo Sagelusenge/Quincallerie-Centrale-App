@@ -19,6 +19,20 @@ Pour chaque nouvelle entreprise cliente:
 
 Le setup est utilisable uniquement si aucune entreprise et aucun manager n'existent encore dans la base. Apres la premiere creation, le backend bloque toute nouvelle tentative de setup.
 
+Important: cette verification ne depend pas d'un token JWT. Les routes `/api/setup/status` et `/api/setup/company` sont publiques parce qu'elles servent justement avant la premiere connexion. Pour savoir si l'application est deja configuree, le backend interroge directement la base de donnees:
+
+```txt
+SELECT COUNT(*) FROM entreprise
+SELECT COUNT(*) FROM utilisateur WHERE role = 'manager' AND actif = 1
+```
+
+Si la base contient au moins une entreprise ou au moins un manager actif, le backend considere que l'installation est deja faite. Dans ce cas:
+
+- `/api/setup/status` retourne `configured: true`, `setup_available: false` et `locked: true`;
+- `/api/setup/company` refuse une nouvelle creation et retourne `409`.
+
+Cette regle protege l'installation: une personne non connectee ne peut pas recreer ou remplacer l'entreprise apres le premier setup. Une fois l'entreprise creee, les utilisateurs doivent passer par `/api/auth/login`, recevoir un token JWT, puis utiliser les routes protegees.
+
 Pour eviter qu'une personne non autorisee cree l'entreprise avant le vrai client, l'installation peut definir `SETUP_CODE` dans `.env`. Dans ce cas, le front/mobile doit demander ce code sur l'ecran de premiere creation et l'envoyer au backend.
 
 ## Roles utilisateurs
