@@ -18,7 +18,7 @@ npm run dev
 Au premier lancement, l'application doit appeler:
 
 ```txt
-GET http://localhost:5000/api/setup/status
+GET https://quincallerie-centrale-app.onrender.com/api/setup/status
 ```
 
 Si `setup_available` vaut `true`, afficher l'ecran de creation de l'entreprise.
@@ -30,7 +30,7 @@ Si `SETUP_CODE` est defini dans `.env`, l'ecran de creation doit demander ce cod
 ## Creation initiale de l'entreprise
 
 ```txt
-POST http://localhost:5000/api/setup/company
+POST https://quincallerie-centrale-app.onrender.com/api/setup/company
 Content-Type: application/json
 ```
 
@@ -52,7 +52,7 @@ Apres une creation reussie, `/api/setup/company` est verrouille et retourne `409
 ## Authentification
 
 ```txt
-POST http://localhost:5000/api/auth/login
+POST https://quincallerie-centrale-app.onrender.com/api/auth/login
 ```
 
 ```json

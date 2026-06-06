@@ -1,6 +1,6 @@
 # Backend CRM PME
 
-Ce dossier contient le backend Node.js/Express de l'application CRM PME. Il expose une API REST pour gerer l'authentification, les clients, les produits, les categories, les paniers, les ventes, les paiements, les rapports, les notifications, les emails et les utilisateurs.
+Ce dossier contient le backend Node.js/Express de l'application CRM PME. Il expose une API REST pour gerer l'authentification, les clients, les produits, les categories, les fournisseurs, les paniers, les ventes, les paiements, les rapports, les notifications, les emails et les utilisateurs.
 
 ## Technologies utilisees
 
@@ -69,4 +69,3 @@ npm install
 npm run dev
 npm start
 ```
-

@@ -12,21 +12,22 @@ Ce dossier contient les controllers. Un controller recoit la requete Express, va
 
 4. `dashboardController.js`: fournit les statistiques du tableau de bord. Il appelle la procedure stockee `sp_GetDashboardStats`, retourne les ventes mensuelles, les alertes de stock et les produits les plus vendus.
 
-5. `mailController.js`: gere l'etat de la configuration mail, l'historique des messages, l'envoi d'un email personnalise et l'envoi d'une notification a toute l'equipe.
+5. `fournisseurController.js`: gere les fournisseurs utilises pendant les approvisionnements. Il liste, affiche, cree, modifie et supprime/desactive les fournisseurs, avec historique des entrees de stock liees.
 
-6. `notificationController.js`: liste les notifications de l'utilisateur connecte et permet de marquer une notification comme lue.
+6. `mailController.js`: gere l'etat de la configuration mail, l'historique des messages, l'envoi d'un email personnalise et l'envoi d'une notification a toute l'equipe.
 
-7. `paiementController.js`: enregistre les paiements d'une facture, controle que le paiement ne depasse pas le reste a payer, appelle `sp_EnregistrerPaiement`, puis fournit le rapport de caisse et la repartition des paiements.
+7. `notificationController.js`: liste les notifications de l'utilisateur connecte et permet de marquer une notification comme lue.
 
-8. `panierController.js`: gere le flux panier, base sur les anciennes tables de devis. Il liste, affiche, cree, modifie, convertit en facture, annule et supprime les paniers en attente.
+8. `paiementController.js`: enregistre les paiements d'une facture, controle que le paiement ne depasse pas le reste a payer, appelle `sp_EnregistrerPaiement`, puis fournit le rapport de caisse et la repartition des paiements.
 
-9. `produitController.js`: gere les produits et le stock. Il liste les produits avec statut de stock, affiche les mouvements recents, cree, modifie, supprime et approvisionne les produits.
+9. `panierController.js`: gere le flux panier, base sur les anciennes tables de devis. Il liste, affiche, cree, modifie, convertit en facture, annule et supprime les paniers en attente.
 
-10. `rapportController.js`: fournit les rapports: factures, creances, inventaire stock, top acheteurs et historique d'achat par client.
+10. `produitController.js`: gere les produits et le stock. Il liste les produits avec statut de stock, affiche les mouvements recents, cree, modifie, supprime et approvisionne les produits. L'approvisionnement demande maintenant un `fournisseur_id`.
 
-11. `setupController.js`: gere la premiere installation. Il indique si le setup est disponible et cree la premiere entreprise avec son premier manager.
+11. `rapportController.js`: fournit les rapports: factures, creances, inventaire stock, top acheteurs et historique d'achat par client.
 
-12. `utilisateurController.js`: permet au manager de gerer les utilisateurs internes: liste, creation, modification, activation/desactivation, suppression et historique d'activite.
+12. `setupController.js`: gere la premiere installation. Il indique si le setup est disponible et cree la premiere entreprise avec son premier manager.
 
-13. `venteController.js`: gere les factures/ventes directes. Il liste, affiche, cree, modifie et supprime les ventes tout en controlant le stock et les paiements existants.
+13. `utilisateurController.js`: permet au manager de gerer les utilisateurs internes: liste, creation, modification, activation/desactivation, suppression et historique d'activite.
 
+14. `venteController.js`: gere les factures/ventes directes. Il liste, affiche, cree, modifie et supprime les ventes tout en controlant le stock et les paiements existants.

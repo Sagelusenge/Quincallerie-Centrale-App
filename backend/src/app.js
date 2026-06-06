@@ -15,6 +15,7 @@ import rapportRoutes from './routes/rapportRoutes.js';
 import utilisateurRoutes from './routes/utilisateurRoutes.js';
 import mailRoutes from './routes/mailRoutes.js';
 import categorieRoutes from './routes/categorieRoutes.js';
+import fournisseurRoutes from './routes/fournisseurRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import setupRoutes from './routes/setupRoutes.js';
 
@@ -43,6 +44,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/produits', produitRoutes);
 app.use('/api/categories', categorieRoutes);
+app.use('/api/fournisseurs', fournisseurRoutes);
 app.use('/api/paniers', panierRoutes);
 app.use('/api/ventes', venteRoutes);
 app.use('/api/paiements', paiementRoutes);

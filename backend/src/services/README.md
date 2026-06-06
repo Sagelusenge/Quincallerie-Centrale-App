@@ -10,5 +10,4 @@ Ce dossier contient les services reutilisables. Un service n'est pas directement
 
 3. `notificationService.js`: cree des notifications et permet de notifier les managers actifs d'une entreprise.
 
-4. `schemaService.js`: applique au demarrage les ajustements de schema necessaires. Il cree certaines tables si elles manquent et ajoute des colonnes utiles sans casser la base existante.
-
+4. `schemaService.js`: applique au demarrage les ajustements de schema necessaires. Il cree certaines tables si elles manquent, dont `fournisseurs`, et ajoute des colonnes utiles comme `mouvements_stock.fournisseur_id` sans casser la base existante.

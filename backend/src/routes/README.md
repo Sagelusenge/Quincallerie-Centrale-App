@@ -12,25 +12,26 @@ Ce dossier contient les fichiers de routes Express. Une route definit l'URL, la 
 
 4. `dashboardRoutes.js`: routes des statistiques du tableau de bord, ventes mensuelles, alertes stock et produits les plus vendus.
 
-5. `mailRoutes.js`: routes de messagerie. Elles verifient que l'utilisateur est connecte et limitent l'envoi aux managers.
+5. `fournisseurRoutes.js`: routes des fournisseurs. Manager et magasinier peuvent consulter/creer/modifier; seul le manager peut supprimer ou desactiver.
 
-6. `notificationRoutes.js`: routes pour lister les notifications et les marquer comme lues.
+6. `mailRoutes.js`: routes de messagerie. Elles verifient que l'utilisateur est connecte et limitent l'envoi aux managers.
 
-7. `paiementRoutes.js`: routes pour enregistrer les paiements, consulter le rapport de caisse et la repartition des modes de paiement.
+7. `notificationRoutes.js`: routes pour lister les notifications et les marquer comme lues.
 
-8. `panierRoutes.js`: routes du panier: liste, detail, creation, modification, conversion en facture, annulation et suppression.
+8. `paiementRoutes.js`: routes pour enregistrer les paiements, consulter le rapport de caisse et la repartition des modes de paiement.
 
-9. `produitRoutes.js`: routes des produits, mouvements de stock et approvisionnement.
+9. `panierRoutes.js`: routes du panier: liste, detail, creation, modification, conversion en facture, annulation et suppression.
 
-10. `rapportRoutes.js`: routes des rapports: factures, creances, stock, top acheteurs et historique client.
+10. `produitRoutes.js`: routes des produits, mouvements de stock et approvisionnement. L'approvisionnement recoit aussi le fournisseur.
 
-11. `setupRoutes.js`: routes publiques de premiere installation: statut du setup et creation initiale de l'entreprise.
+11. `rapportRoutes.js`: routes des rapports: factures, creances, stock, top acheteurs et historique client.
 
-12. `utilisateurRoutes.js`: routes de gestion des utilisateurs, accessibles au manager.
+12. `setupRoutes.js`: routes publiques de premiere installation: statut du setup et creation initiale de l'entreprise.
 
-13. `venteRoutes.js`: routes des ventes/factures directes: liste, detail, creation, modification et suppression.
+13. `utilisateurRoutes.js`: routes de gestion des utilisateurs, accessibles au manager.
+
+14. `venteRoutes.js`: routes des ventes/factures directes: liste, detail, creation, modification et suppression.
 
 ## Prefixes dans app.js
 
 Chaque fichier est monte dans `app.js` avec un prefixe comme `/api/auth`, `/api/clients`, `/api/produits`, etc.
-

@@ -1,9 +1,9 @@
 # Endpoints API - CRM PME
 
-Base URL locale:
+Base URL Render:
 
 ```txt
-http://localhost:5000
+https://quincallerie-centrale-app.onrender.com
 ```
 
 ## Headers
@@ -386,6 +386,67 @@ Roles: `manager`, `magasinier`.
 
 Roles: `manager`.
 
+## Fournisseurs
+
+### Liste
+
+`GET /api/fournisseurs`
+
+Roles: `manager`, `magasinier`.
+
+### Detail
+
+`GET /api/fournisseurs/:id`
+
+Roles: `manager`, `magasinier`.
+
+Retourne le fournisseur et ses derniers approvisionnements.
+
+### Creer
+
+`POST /api/fournisseurs`
+
+Roles: `manager`, `magasinier`.
+
+Body:
+
+```json
+{
+  "nom": "Quincaillerie Centrale Depot",
+  "telephone": "+243000000000",
+  "email": "fournisseur@example.com",
+  "adresse": "Kinshasa"
+}
+```
+
+Champ requis: `nom`.
+
+### Modifier
+
+`PUT /api/fournisseurs/:id`
+
+Roles: `manager`, `magasinier`.
+
+Body:
+
+```json
+{
+  "nom": "Quincaillerie Centrale Depot",
+  "telephone": "+243000000000",
+  "email": "fournisseur@example.com",
+  "adresse": "Kinshasa",
+  "actif": true
+}
+```
+
+### Supprimer
+
+`DELETE /api/fournisseurs/:id`
+
+Roles: `manager`.
+
+Si le fournisseur possede deja des approvisionnements, il est desactive au lieu d'etre supprime pour conserver l'historique.
+
 ## Produits
 
 ### Liste
@@ -452,9 +513,12 @@ Body:
 
 ```json
 {
-  "quantite": 50
+  "quantite": 50,
+  "fournisseur_id": "FOU-..."
 }
 ```
+
+Champs requis: `quantite`, `fournisseur_id`.
 
 ### Supprimer
 

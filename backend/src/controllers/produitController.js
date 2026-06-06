@@ -28,9 +28,11 @@ export const getMouvementsStock = async (req, res) => {
     try {
         const [rows] = await pool.query(
             `SELECT m.id_mouvement, m.type_mouvement, m.quantite, m.date_mouvement,
-                    p.nom AS produit_nom, p.reference_produit
+                    p.nom AS produit_nom, p.reference_produit,
+                    f.id_fournisseur, f.nom AS fournisseur_nom
              FROM mouvements_stock m
              JOIN produits p ON p.id_produit = m.produit_id
+             LEFT JOIN fournisseurs f ON f.id_fournisseur = m.fournisseur_id
              WHERE p.entreprise_id = ?
              ORDER BY m.date_mouvement DESC
              LIMIT 8`,
@@ -108,7 +110,7 @@ export const updateProduit = async (req, res) => {
 // POST /api/produits/:id/approvisionner
 export const approvisionner = async (req, res) => {
     const { id } = req.params;
-    const { quantite } = req.body;
+    const { quantite, fournisseur_id } = req.body;
     const entreprise_id = req.user.entreprise_id;
     const quantiteNumber = Number(quantite);
 
@@ -116,20 +118,68 @@ export const approvisionner = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Quantite positive requise' });
     }
 
+    if (!fournisseur_id) {
+        return res.status(400).json({ success: false, message: 'Fournisseur requis pour approvisionner' });
+    }
+
+    const connection = await pool.getConnection();
     try {
-        const [produits] = await pool.query(
-            `SELECT id_produit FROM produits WHERE id_produit = ? AND entreprise_id = ?`,
+        await connection.beginTransaction();
+
+        const [produits] = await connection.query(
+            `SELECT id_produit FROM produits WHERE id_produit = ? AND entreprise_id = ? FOR UPDATE`,
             [id, entreprise_id]
         );
 
         if (produits.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ success: false, message: 'Produit introuvable dans votre entreprise' });
         }
 
-        await pool.query('CALL sp_ApprovisionnerProduit(?, ?)', [id, quantiteNumber]);
-        res.json({ success: true, message: `Stock mis a jour (+${quantiteNumber} unites)` });
+        const [fournisseurs] = await connection.query(
+            `SELECT id_fournisseur, nom
+             FROM fournisseurs
+             WHERE id_fournisseur = ? AND entreprise_id = ? AND actif = TRUE
+             FOR UPDATE`,
+            [fournisseur_id, entreprise_id]
+        );
+
+        if (fournisseurs.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ success: false, message: 'Fournisseur introuvable ou inactif' });
+        }
+
+        await connection.query(
+            `UPDATE produits SET quantite_stock = quantite_stock + ? WHERE id_produit = ?`,
+            [quantiteNumber, id]
+        );
+
+        await connection.query(
+            `UPDATE sequences SET derniere_valeur = derniere_valeur + 1 WHERE nom_table = 'mouvements_stock'`
+        );
+        const [seq] = await connection.query(
+            `SELECT derniere_valeur FROM sequences WHERE nom_table = 'mouvements_stock'`
+        );
+        const id_mouvement = `MVT-${String(seq[0].derniere_valeur).padStart(6, '0')}`;
+
+        await connection.query(
+            `INSERT INTO mouvements_stock
+                (id_mouvement, produit_id, fournisseur_id, type_mouvement, quantite)
+             VALUES (?, ?, ?, 'entree', ?)`,
+            [id_mouvement, id, fournisseur_id, quantiteNumber]
+        );
+
+        await connection.commit();
+        res.json({
+            success: true,
+            message: `Stock mis a jour (+${quantiteNumber} unites) via ${fournisseurs[0].nom}`,
+            data: { id_mouvement, fournisseur_id }
+        });
     } catch (error) {
+        await connection.rollback();
         res.status(500).json({ success: false, message: error.message });
+    } finally {
+        connection.release();
     }
 };
 

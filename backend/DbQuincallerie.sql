@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS crm_pme;
-USE crm_pme;
+CREATE DATABASE IF NOT EXISTS Dbquincallerie;
+USE Dbquincallerie;
 
 -- 1. Gestion des IDs (Indispensable pour les triggers à venir)
 CREATE TABLE sequences (
@@ -66,13 +66,28 @@ CREATE TABLE produits (
     FOREIGN KEY (entreprise_id) REFERENCES entreprise(id_entreprise) ON DELETE CASCADE
 );
 
+CREATE TABLE fournisseurs (
+    id_fournisseur VARCHAR(50) PRIMARY KEY,
+    entreprise_id VARCHAR(50) NOT NULL,
+    nom VARCHAR(160) NOT NULL,
+    telephone VARCHAR(30),
+    email VARCHAR(160),
+    adresse VARCHAR(255),
+    actif BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_fournisseurs_entreprise_nom (entreprise_id, nom),
+    FOREIGN KEY (entreprise_id) REFERENCES entreprise(id_entreprise) ON DELETE CASCADE
+);
+
 CREATE TABLE mouvements_stock (
     id_mouvement VARCHAR(50) PRIMARY KEY,
     produit_id VARCHAR(50) NOT NULL,
+    fournisseur_id VARCHAR(50),
     type_mouvement ENUM('entree', 'sortie') NOT NULL,
     quantite INT NOT NULL,
     date_mouvement TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (produit_id) REFERENCES produits(id_produit) ON DELETE CASCADE
+    FOREIGN KEY (produit_id) REFERENCES produits(id_produit) ON DELETE CASCADE,
+    FOREIGN KEY (fournisseur_id) REFERENCES fournisseurs(id_fournisseur) ON DELETE SET NULL
 );
 
 -- 5. Cycle Commercial (Devis & Ventes)
@@ -361,7 +376,8 @@ END$$
 -- 4. STOCK : AJOUTER DU STOCK (ACHAT FOURNISSEUR)
 CREATE PROCEDURE sp_ApprovisionnerProduit(
     IN p_produit_id VARCHAR(50),
-    IN p_quantite INT
+    IN p_quantite INT,
+    IN p_fournisseur_id VARCHAR(50)
 )
 BEGIN
     DECLARE v_nb INT;
@@ -373,8 +389,8 @@ BEGIN
         UPDATE sequences SET derniere_valeur = derniere_valeur + 1 WHERE nom_table = 'mouvements_stock';
         SELECT derniere_valeur INTO v_nb FROM sequences WHERE nom_table = 'mouvements_stock';
 
-        INSERT INTO mouvements_stock (id_mouvement, produit_id, type_mouvement, quantite)
-        VALUES (CONCAT('MVT-', LPAD(v_nb, 6, '0')), p_produit_id, 'entree', p_quantite);
+        INSERT INTO mouvements_stock (id_mouvement, produit_id, fournisseur_id, type_mouvement, quantite)
+        VALUES (CONCAT('MVT-', LPAD(v_nb, 6, '0')), p_produit_id, p_fournisseur_id, 'entree', p_quantite);
     COMMIT;
 END$$
 

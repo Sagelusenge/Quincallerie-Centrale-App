@@ -181,11 +181,13 @@ npm install
 npm run dev
 ```
 
-Par defaut, l'API ecoute sur:
+En production, l'API est disponible sur:
 
 ```txt
-http://localhost:5000
+https://quincallerie-centrale-app.onrender.com
 ```
+
+En developpement local, elle peut aussi ecouter sur `http://localhost:5000`.
 
 ## Variables d'environnement importantes
 

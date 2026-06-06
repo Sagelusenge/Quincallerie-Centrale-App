@@ -61,6 +61,21 @@ export const ensureRuntimeSchema = async (pool) => {
         )
     `);
 
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS fournisseurs (
+            id_fournisseur VARCHAR(50) PRIMARY KEY,
+            entreprise_id VARCHAR(50) NOT NULL,
+            nom VARCHAR(160) NOT NULL,
+            telephone VARCHAR(30),
+            email VARCHAR(160),
+            adresse VARCHAR(255),
+            actif BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_fournisseurs_entreprise_nom (entreprise_id, nom),
+            FOREIGN KEY (entreprise_id) REFERENCES entreprise(id_entreprise) ON DELETE CASCADE
+        )
+    `);
+
     const addColumnIfMissing = async (table, column, definition) => {
         const [rows] = await pool.query(
             `SELECT COLUMN_NAME
@@ -119,6 +134,12 @@ export const ensureRuntimeSchema = async (pool) => {
     await addColumnIfMissing('produits', 'photo_url', 'TEXT NULL');
     await addColumnIfMissing('categorie_produit', 'reference_categorie', 'VARCHAR(50) NULL');
     await addColumnIfMissing('categorie_produit', 'photo_url', 'TEXT NULL');
+    await addColumnIfMissing('mouvements_stock', 'fournisseur_id', 'VARCHAR(50) NULL AFTER produit_id');
+    await addColumnIfMissing('fournisseurs', 'telephone', 'VARCHAR(30) NULL');
+    await addColumnIfMissing('fournisseurs', 'email', 'VARCHAR(160) NULL');
+    await addColumnIfMissing('fournisseurs', 'adresse', 'VARCHAR(255) NULL');
+    await addColumnIfMissing('fournisseurs', 'actif', 'BOOLEAN DEFAULT TRUE');
+    await addColumnIfMissing('fournisseurs', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
 
     await pool.query(`
         UPDATE categorie_produit
