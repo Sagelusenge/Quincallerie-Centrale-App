@@ -10,4 +10,6 @@ Ce dossier contient les services reutilisables. Un service n'est pas directement
 
 3. `notificationService.js`: cree des notifications et permet de notifier les managers actifs d'une entreprise.
 
-4. `schemaService.js`: applique au demarrage les ajustements de schema necessaires. Il cree certaines tables si elles manquent, dont `fournisseurs`, et ajoute des colonnes utiles comme `mouvements_stock.fournisseur_id` sans casser la base existante.
+4. `backupService.js`: genere un fichier SQL de backup et lance les backups automatiques selon les variables `DB_BACKUP_ENABLED`, `DB_BACKUP_INTERVAL_HOURS`, `DB_BACKUP_RETENTION_DAYS` et `DB_BACKUP_DIR`.
+
+5. `schemaService.js`: applique au demarrage les ajustements de schema necessaires. Il cree certaines tables si elles manquent, dont `fournisseurs`, et ajoute des colonnes utiles comme `mouvements_stock.fournisseur_id` sans casser la base existante.

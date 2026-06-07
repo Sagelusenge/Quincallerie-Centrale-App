@@ -2,6 +2,7 @@ import app from './app.js';
 import dotenv from 'dotenv';
 import pool from './config/db.js';
 import { ensureRuntimeSchema } from './services/schemaService.js';
+import { startAutomaticBackups } from './services/backupService.js';
 
 dotenv.config();
 
@@ -14,6 +15,7 @@ const startServer = async () => {
         connection.release();
 
         await ensureRuntimeSchema(pool);
+        startAutomaticBackups(pool);
 
         app.listen(PORT, () => {
             console.log(`Serveur demarre sur http://localhost:${PORT}`);

@@ -57,6 +57,7 @@ Les roles principaux sont:
 - `FRONTEND_URL`: origines autorisees par CORS, separees par des virgules.
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS`, `DB_NAME`: connexion MySQL.
 - `DB_SSL`: active SSL pour Aiven/Render avec `true`, `REQUIRED` ou `1`.
+- `DB_BACKUP_ENABLED`, `DB_BACKUP_INTERVAL_HOURS`, `DB_BACKUP_RETENTION_DAYS`, `DB_BACKUP_DIR`: configuration du backup automatique SQL.
 - `JWT_SECRET`, `JWT_EXPIRES_IN`: configuration des tokens.
 - `BCRYPT_ROUNDS`: niveau de hashage des mots de passe.
 - `EMAIL_USER`, `EMAIL_PASS`: compte Gmail utilise par `nodemailer`.
