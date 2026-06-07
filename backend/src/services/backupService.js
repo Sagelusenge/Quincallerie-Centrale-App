@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const DEFAULT_INTERVAL_HOURS = 12;
-const DEFAULT_RETENTION_DAYS = 14;
+const DEFAULT_RETENTION_DAYS = 0;
 
 const quoteIdentifier = (value) => `\`${String(value).replace(/`/g, '``')}\``;
 
@@ -39,7 +39,8 @@ const getIntervalMs = () => {
 
 const getRetentionMs = () => {
     const days = Number(process.env.DB_BACKUP_RETENTION_DAYS || DEFAULT_RETENTION_DAYS);
-    return Math.max(days || DEFAULT_RETENTION_DAYS, 1) * 24 * 60 * 60 * 1000;
+    if (!Number.isFinite(days) || days <= 0) return null;
+    return days * 24 * 60 * 60 * 1000;
 };
 
 const getTables = async (pool) => {
@@ -136,6 +137,8 @@ export const createDatabaseBackup = async (pool) => {
 export const cleanupOldBackups = async () => {
     const backupDir = getBackupDir();
     const retentionMs = getRetentionMs();
+    if (!retentionMs) return;
+
     const now = Date.now();
 
     await fs.mkdir(backupDir, { recursive: true });
