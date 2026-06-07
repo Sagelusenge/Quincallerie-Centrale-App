@@ -87,6 +87,8 @@ Cette operation cree:
 - le premier manager;
 - le mot de passe initial du manager.
 
+Si `EMAIL_USER` et `EMAIL_PASS` sont configures, le backend envoie aussi un email de bienvenue au premier manager avec ses informations de connexion. Si l'envoi email echoue, la creation de l'entreprise et du manager reste valide.
+
 Apres cela, `/api/setup/company` devient inaccessible et retourne une erreur `409`.
 
 ## Modules principaux

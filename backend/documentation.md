@@ -55,7 +55,9 @@ Content-Type: application/json
 }
 ```
 
-Apres une creation reussie, `/api/setup/company` est verrouille et retourne `409` pour toute nouvelle tentative, meme si la requete est envoyee sans token.
+Apres une creation reussie, le backend peut envoyer un email de bienvenue au manager si `EMAIL_USER` et `EMAIL_PASS` sont configures.
+
+Ensuite, `/api/setup/company` est verrouille et retourne `409` pour toute nouvelle tentative, meme si la requete est envoyee sans token.
 
 ## Authentification
 

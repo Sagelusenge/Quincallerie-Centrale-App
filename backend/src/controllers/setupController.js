@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import pool from '../config/db.js';
+import { sendWelcomeUserEmail } from '../services/mailService.js';
 
 const normalizePrefix = (name) => {
     const cleaned = String(name || 'ENT')
@@ -121,12 +122,26 @@ export const configureEntreprise = async (req, res) => {
 
         await connection.commit();
 
+        const mailResult = await sendWelcomeUserEmail({
+            to: email_manager,
+            name: nom_manager,
+            role: 'manager',
+            password: mot_de_passe_manager,
+            company: raison_sociale
+        }).catch((error) => {
+            console.error('Erreur email manager initial:', error.message);
+            return { skipped: true, message: error.message };
+        });
+
         res.json({
             success: true,
-            message: 'Entreprise configuree avec son manager.',
+            message: mailResult?.skipped
+                ? 'Entreprise configuree avec son manager. Email non envoye.'
+                : 'Entreprise configuree avec son manager. Email envoye.',
             data: {
                 id_entreprise: entrepriseId,
                 raison_sociale,
+                email_envoye: !mailResult?.skipped,
                 manager: {
                     id_utilisateur: managerId,
                     nom: nom_manager,

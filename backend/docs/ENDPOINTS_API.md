@@ -196,6 +196,8 @@ Body:
 
 `setup_code` est requis seulement si `SETUP_CODE` est defini cote backend. Si le code est envoye dans le header `X-Setup-Code`, il n'est pas necessaire de le mettre dans le body.
 
+Si `EMAIL_USER` et `EMAIL_PASS` sont configures, le backend envoie un email de bienvenue au manager cree pendant le setup. La reponse contient `email_envoye`.
+
 Reponse si le code est incorrect:
 
 ```json
