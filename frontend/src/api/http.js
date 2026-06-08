@@ -1,6 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-const getToken = () => {
+export const getToken = () => {
   try {
     const session = JSON.parse(localStorage.getItem('quincaillerie_auth') || 'null');
     return session?.token || localStorage.getItem('token');

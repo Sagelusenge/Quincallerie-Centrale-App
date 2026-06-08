@@ -36,7 +36,7 @@ router.put('/:id',
 
 router.delete('/:id',
     protect,
-    authorizeRoles('manager'),
+    authorizeRoles('manager', 'magasinier'),
     deleteFournisseur
 );
 

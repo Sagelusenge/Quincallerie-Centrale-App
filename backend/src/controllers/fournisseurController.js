@@ -95,6 +95,7 @@ export const createFournisseur = async (req, res) => {
 export const updateFournisseur = async (req, res) => {
     const { id } = req.params;
     const { nom, telephone, email, adresse, actif } = req.body;
+    const actifValue = actif === undefined ? true : ['true', '1', 1, true].includes(actif);
 
     if (!nom) {
         return res.status(400).json({ success: false, message: 'Nom du fournisseur requis' });
@@ -110,7 +111,7 @@ export const updateFournisseur = async (req, res) => {
                 telephone || null,
                 email || null,
                 adresse || null,
-                actif === undefined ? true : Boolean(actif),
+                actifValue,
                 id,
                 req.user.entreprise_id
             ]

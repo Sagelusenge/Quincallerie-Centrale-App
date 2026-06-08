@@ -8,5 +8,11 @@ export const useCreatePanier = () => {
 };
 export const useConvertirPanier = () => {
   const queryClient = useQueryClient();
-  return useMutation({ mutationFn: panierApi.convertir, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['paniers'] }) });
+  return useMutation({
+    mutationFn: panierApi.convertir,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['paniers'] });
+      queryClient.invalidateQueries({ queryKey: ['ventes'] });
+    },
+  });
 };

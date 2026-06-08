@@ -10,6 +10,9 @@ import { useProduits } from '../produits/produitQueries.js';
 import { PanierForm } from './PanierForm.jsx';
 import { useConvertirPanier, useCreatePanier, usePaniers } from './panierQueries.js';
 import { useToast } from '../../contexts/ToastContext.jsx';
+import { formatCurrency } from '../../utils/formatCurrency.js';
+
+const getPanierTotal = (row) => row.montant_ttc ?? row.total_ttc ?? row.montant_total_ttc ?? 0;
 
 export function PaniersPage() {
   const [open, setOpen] = useState(false);
@@ -38,9 +41,19 @@ export function PaniersPage() {
           { key: 'id_panier', header: 'Panier' },
           { key: 'client_nom', header: 'Client', render: (row) => row.client_nom || row.nom_client || row.client_id },
           { key: 'statut', header: 'Statut', render: (row) => <Badge color={row.statut === 'en_attente' ? 'warning' : 'success'}>{row.statut || 'en_attente'}</Badge> },
-          { key: 'total_ttc', header: 'Total' },
+          { key: 'montant_ttc', header: 'Montant total', render: (row) => formatCurrency(getPanierTotal(row)) },
         ]}
-        renderActions={(row) => <Button variant="secondary" onClick={() => convertir.mutate(row.id_panier)}>Convertir</Button>}
+        renderActions={(row) => {
+          if ((row.statut || 'en_attente') !== 'en_attente') {
+            return <span className="text-sm text-slate-400">Deja traite</span>;
+          }
+
+          return (
+            <Button variant="secondary" onClick={() => convertir.mutate(row.id_panier)} isLoading={convertir.isPending}>
+              Convertir
+            </Button>
+          );
+        }}
       />
       <Modal open={open} title="Nouveau panier" onClose={() => setOpen(false)}>
         <PanierForm clients={clients.data || []} produits={produits.data || []} onSubmit={submit} isLoading={createPanier.isPending} />

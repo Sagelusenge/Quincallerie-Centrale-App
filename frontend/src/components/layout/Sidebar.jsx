@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell, Boxes, ChartNoAxesCombined, ChevronDown, ClipboardList, CreditCard, FolderTree,
-  Home, Mail, Package, ReceiptText, ShoppingCart, Users, Warehouse,
+  Home, Mail, Package, PackagePlus, ReceiptText, ShoppingCart, Truck, Users, Warehouse,
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { selectUserRole } from '../../features/auth/authSlice.js';
@@ -26,6 +26,13 @@ const sections = [
       { to: '/categories', label: 'Categories', icon: FolderTree, roles: ['manager', 'magasinier'] },
       { to: '/produits', label: 'Produits', icon: Package, roles: ['manager', 'caissier', 'magasinier'] },
       { to: '/stock', label: 'Stock', icon: Warehouse, roles: ['manager', 'magasinier'] },
+    ],
+  },
+  {
+    label: 'Approvisionnement',
+    items: [
+      { to: '/fournisseurs', label: 'Fournisseurs', icon: Truck, roles: ['manager', 'magasinier'] },
+      { to: '/produits_stock', label: 'Produits stock', icon: PackagePlus, roles: ['manager', 'magasinier'] },
     ],
   },
   {
@@ -62,6 +69,8 @@ const legacyItems = [
   { to: '/categories', label: 'Categories', icon: FolderTree, roles: ['manager', 'magasinier'] },
   { to: '/produits', label: 'Produits', icon: Package, roles: ['manager', 'caissier', 'magasinier'] },
   { to: '/stock', label: 'Stock', icon: Warehouse, roles: ['manager', 'magasinier'] },
+  { to: '/fournisseurs', label: 'Fournisseurs', icon: Truck, roles: ['manager', 'magasinier'] },
+  { to: '/produits_stock', label: 'Produits stock', icon: PackagePlus, roles: ['manager', 'magasinier'] },
   { to: '/paniers', label: 'Paniers', icon: ShoppingCart, roles: ['manager', 'caissier'] },
   { to: '/ventes', label: 'Ventes', icon: ReceiptText, roles: ['manager', 'caissier'] },
   { to: '/paiements', label: 'Paiements', icon: CreditCard, roles: ['manager', 'caissier'] },

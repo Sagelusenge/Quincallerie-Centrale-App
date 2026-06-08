@@ -14,6 +14,19 @@ const nextId = async (connection, nomTable, prefix, size = 5) => {
     return `${prefix}-${String(rows[0].derniere_valeur).padStart(size, '0')}`;
 };
 
+const recalculateVenteTotal = async (connection, venteId) => {
+    await connection.query(
+        `UPDATE ventes
+         SET montant_ttc = (
+             SELECT IFNULL(SUM(quantite * prix_unitaire_ht), 0) * 1.16
+             FROM lignes_ventes
+             WHERE vente_id = ?
+         )
+         WHERE id_ventes = ?`,
+        [venteId, venteId]
+    );
+};
+
 const formatPanier = (row) => {
     if (!row) return row;
     return {
@@ -29,9 +42,17 @@ export const getAllPaniers = async (req, res) => {
     const entreprise_id = req.user.entreprise_id;
     try {
         const [rows] = await pool.query(
-            `SELECT d.*, c.nom AS client_nom, c.postnom AS client_postnom
+            `SELECT d.*,
+                    COALESCE(NULLIF(d.montant_ttc, 0), IFNULL(line_totals.total_ttc, 0)) AS montant_ttc,
+                    COALESCE(NULLIF(d.montant_ttc, 0), IFNULL(line_totals.total_ttc, 0)) AS total_ttc,
+                    c.nom AS client_nom, c.postnom AS client_postnom
              FROM devis d
              JOIN client c ON d.client_id = c.id_client
+             LEFT JOIN (
+                SELECT devis_id, SUM(quantite * prix_unitaire_ht) * 1.16 AS total_ttc
+                FROM lignes_devis
+                GROUP BY devis_id
+             ) line_totals ON line_totals.devis_id = d.id_devis
              WHERE d.entreprise_id = ?
              ORDER BY d.date_devis DESC`,
             [entreprise_id]
@@ -312,6 +333,8 @@ export const convertirPanier = async (req, res) => {
             );
         }
 
+        await recalculateVenteTotal(connection, facture_id);
+
         await connection.query(
             `UPDATE devis SET statut = 'converti' WHERE id_devis = ? AND entreprise_id = ?`,
             [id, entreprise_id]
@@ -321,7 +344,11 @@ export const convertirPanier = async (req, res) => {
         res.json({
             success: true,
             message: 'Panier converti en facture avec succes',
-            facture: facture_id
+            facture: facture_id,
+            id: facture_id,
+            id_vente: facture_id,
+            id_facture: facture_id,
+            numero_facture: facture_id
         });
     } catch (error) {
         await connection.rollback();
