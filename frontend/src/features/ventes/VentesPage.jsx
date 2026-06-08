@@ -1,20 +1,51 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge.jsx';
+import { Button } from '../../components/ui/Button.jsx';
+import { Modal } from '../../components/ui/Modal.jsx';
 import { Table } from '../../components/ui/Table.jsx';
 import { Loader } from '../../components/ui/Loader.jsx';
-import { useVentes } from './venteQueries.js';
+import { useClients } from '../clients/clientQueries.js';
+import { useProduits } from '../produits/produitQueries.js';
+import { useCreateVente, useVentes } from './venteQueries.js';
+import { VenteForm } from './VenteForm.jsx';
+import { useToast } from '../../contexts/ToastContext.jsx';
 import { formatCurrency } from '../../utils/formatCurrency.js';
 import { formatDate } from '../../utils/formatDate.js';
 
 export function VentesPage() {
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const { showToast } = useToast();
   const ventes = useVentes();
-  if (ventes.isLoading) return <Loader />;
+  const clients = useClients();
+  const produits = useProduits();
+  const createVente = useCreateVente();
+
+  const handleSubmit = (payload) => {
+    createVente
+      .mutateAsync(payload)
+      .then((response) => {
+        showToast('Vente enregistree et facture generee');
+        setOpen(false);
+        if (response?.facture) {
+          navigate(`/ventes/${response.facture}`);
+        }
+      })
+      .catch((error) => showToast(error.message, 'error'));
+  };
+
+  if (ventes.isLoading || clients.isLoading || produits.isLoading) return <Loader />;
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-950 dark:text-white">Ventes et factures</h1>
-        <p className="text-sm text-slate-500">Suivi des factures et statuts de paiement.</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-950 dark:text-white">Ventes et factures</h1>
+          <p className="text-sm text-slate-500">Suivi des factures et statuts de paiement.</p>
+        </div>
+        <Button onClick={() => setOpen(true)}><Plus size={18} /> Nouvelle vente</Button>
       </div>
       <Table
         data={ventes.data || []}
@@ -34,6 +65,15 @@ export function VentesPage() {
           </Link>
         )}
       />
+
+      <Modal open={open} title="Nouvelle vente" onClose={() => setOpen(false)}>
+        <VenteForm
+          clients={clients.data || []}
+          produits={produits.data || []}
+          onSubmit={handleSubmit}
+          isLoading={createVente.isPending}
+        />
+      </Modal>
     </div>
   );
 }

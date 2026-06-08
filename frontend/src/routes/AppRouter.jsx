@@ -12,6 +12,8 @@ import { ClientsPage } from '../features/clients/ClientsPage.jsx';
 import { CategoriesPage } from '../features/categories/CategoriesPage.jsx';
 import { ProduitsPage } from '../features/produits/ProduitsPage.jsx';
 import { StockPage } from '../features/stock/StockPage.jsx';
+import { FournisseursPage } from '../features/fournisseurs/FournisseursPage.jsx';
+import { ProduitsStockPage } from '../features/produitsStock/ProduitsStockPage.jsx';
 import { PaniersPage } from '../features/paniers/PaniersPage.jsx';
 import { VentesPage } from '../features/ventes/VentesPage.jsx';
 import { VenteDetailsPage } from '../features/ventes/VenteDetailsPage.jsx';
@@ -67,6 +69,8 @@ export function AppRouter() {
           <Route path="/categories" element={<RequireRole roles={['manager', 'magasinier']}><CategoriesPage /></RequireRole>} />
           <Route path="/produits" element={<RequireRole roles={['manager', 'caissier', 'magasinier']}><ProduitsPage /></RequireRole>} />
           <Route path="/stock" element={<RequireRole roles={['manager', 'magasinier']}><StockPage /></RequireRole>} />
+          <Route path="/fournisseurs" element={<RequireRole roles={['manager', 'magasinier']}><FournisseursPage /></RequireRole>} />
+          <Route path="/produits_stock" element={<RequireRole roles={['manager', 'magasinier']}><ProduitsStockPage /></RequireRole>} />
           <Route path="/paniers" element={<RequireRole roles={['manager', 'caissier']}><PaniersPage /></RequireRole>} />
           <Route path="/ventes" element={<RequireRole roles={['manager', 'caissier']}><VentesPage /></RequireRole>} />
           <Route path="/ventes/:id" element={<RequireRole roles={['manager', 'caissier']}><VenteDetailsPage /></RequireRole>} />
