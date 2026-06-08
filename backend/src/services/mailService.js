@@ -1,20 +1,82 @@
 import nodemailer from 'nodemailer';
+import pool from '../config/db.js';
 
-const getTransporter = () => {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+let cachedMailConfig = null;
+let cachedAt = 0;
+const CACHE_TTL_MS = 30_000;
+
+const getEnvMailConfig = () => {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return null;
+
+    return {
+        service: 'gmail',
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+        fromName: 'CRM PME'
+    };
+};
+
+const getMailConfig = async () => {
+    const now = Date.now();
+    if (cachedMailConfig && now - cachedAt < CACHE_TTL_MS) {
+        return cachedMailConfig;
+    }
+
+    try {
+        const [rows] = await pool.query(
+            `SELECT service, email_user, email_pass, from_name
+             FROM mail_settings
+             WHERE actif = TRUE
+             ORDER BY id_setting ASC
+             LIMIT 1`
+        );
+
+        if (rows.length > 0) {
+            cachedMailConfig = {
+                service: rows[0].service || 'gmail',
+                user: rows[0].email_user,
+                pass: rows[0].email_pass,
+                fromName: rows[0].from_name || 'CRM PME'
+            };
+            cachedAt = now;
+            return cachedMailConfig;
+        }
+    } catch (error) {
+        cachedMailConfig = null;
+    }
+
+    cachedMailConfig = getEnvMailConfig();
+    cachedAt = now;
+    return cachedMailConfig;
+};
+
+const getTransporter = async () => {
+    const config = await getMailConfig();
+
+    if (!config?.user || !config?.pass) {
         return null;
     }
 
-    return nodemailer.createTransport({
-        service: 'gmail',
+    const transporter = nodemailer.createTransport({
+        service: config.service,
         auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
+            user: config.user,
+            pass: config.pass
         }
     });
+
+    return { transporter, config };
 };
 
-export const isMailReady = () => Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+export const isMailReady = async () => {
+    const config = await getMailConfig();
+    return Boolean(config?.user && config?.pass);
+};
+
+export const getMailSender = async () => {
+    const config = await getMailConfig();
+    return config?.user || null;
+};
 
 const escapeHtml = (value) => String(value || '')
     .replace(/&/g, '&amp;')
@@ -24,14 +86,14 @@ const escapeHtml = (value) => String(value || '')
     .replace(/'/g, '&#39;');
 
 export const sendMail = async ({ to, subject, text, html, replyTo, fromName }) => {
-    const transporter = getTransporter();
+    const mail = await getTransporter();
 
-    if (!transporter) {
+    if (!mail) {
         return { skipped: true, message: 'Configuration email absente' };
     }
 
-    const info = await transporter.sendMail({
-        from: `"${fromName || 'CRM PME'}" <${process.env.EMAIL_USER}>`,
+    const info = await mail.transporter.sendMail({
+        from: `"${fromName || mail.config.fromName || 'CRM PME'}" <${mail.config.user}>`,
         ...(replyTo ? { replyTo } : {}),
         to,
         subject,

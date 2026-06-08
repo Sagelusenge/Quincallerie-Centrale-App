@@ -44,6 +44,16 @@ CREATE TABLE user_activity_logs (
     INDEX idx_activity_user_date (user_id, created_at)
 );
 
+CREATE TABLE mail_settings (
+    id_setting INT PRIMARY KEY DEFAULT 1,
+    service VARCHAR(80) NOT NULL DEFAULT 'gmail',
+    email_user VARCHAR(160) NOT NULL,
+    email_pass VARCHAR(255) NOT NULL,
+    from_name VARCHAR(120) NOT NULL DEFAULT 'CRM PME',
+    actif BOOLEAN DEFAULT TRUE,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 CREATE TABLE client (
     id_client VARCHAR(50) PRIMARY KEY,
     nom VARCHAR(100) NOT NULL,

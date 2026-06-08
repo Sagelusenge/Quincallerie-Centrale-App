@@ -44,6 +44,18 @@ export const ensureRuntimeSchema = async (pool) => {
     `);
 
     await pool.query(`
+        CREATE TABLE IF NOT EXISTS mail_settings (
+            id_setting INT PRIMARY KEY DEFAULT 1,
+            service VARCHAR(80) NOT NULL DEFAULT 'gmail',
+            email_user VARCHAR(160) NOT NULL,
+            email_pass VARCHAR(255) NOT NULL,
+            from_name VARCHAR(120) NOT NULL DEFAULT 'CRM PME',
+            actif BOOLEAN DEFAULT TRUE,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+    `);
+
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS user_activity_logs (
             id_log INT AUTO_INCREMENT PRIMARY KEY,
             entreprise_id VARCHAR(50) NOT NULL,
@@ -107,6 +119,29 @@ export const ensureRuntimeSchema = async (pool) => {
     await addColumnIfMissing('mail_messages', 'message', 'TEXT NULL');
     await addColumnIfMissing('mail_messages', 'status', 'VARCHAR(40) NOT NULL DEFAULT "envoye"');
     await addColumnIfMissing('mail_messages', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+
+    await addColumnIfMissing('mail_settings', 'service', 'VARCHAR(80) NOT NULL DEFAULT "gmail"');
+    await addColumnIfMissing('mail_settings', 'email_user', 'VARCHAR(160) NOT NULL');
+    await addColumnIfMissing('mail_settings', 'email_pass', 'VARCHAR(255) NOT NULL');
+    await addColumnIfMissing('mail_settings', 'from_name', 'VARCHAR(120) NOT NULL DEFAULT "CRM PME"');
+    await addColumnIfMissing('mail_settings', 'actif', 'BOOLEAN DEFAULT TRUE');
+    await addColumnIfMissing('mail_settings', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP');
+
+    const [mailSettings] = await pool.query(`
+        SELECT id_setting
+        FROM mail_settings
+        WHERE id_setting = 1
+        LIMIT 1
+    `);
+
+    if (mailSettings.length === 0 && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+        await pool.query(
+            `INSERT INTO mail_settings
+                (id_setting, service, email_user, email_pass, from_name, actif)
+             VALUES (1, 'gmail', ?, ?, 'CRM PME', TRUE)`,
+            [process.env.EMAIL_USER, process.env.EMAIL_PASS]
+        );
+    }
 
     await addColumnIfMissing('user_activity_logs', 'entreprise_id', 'VARCHAR(50) NOT NULL');
     await addColumnIfMissing('user_activity_logs', 'user_id', 'VARCHAR(50) NOT NULL');
