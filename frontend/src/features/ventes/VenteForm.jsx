@@ -1,40 +1,56 @@
-import { useMemo, useState } from 'react';
-import { Button } from '../../components/ui/Button.jsx';
-import { Input } from '../../components/ui/Input.jsx';
-import { Select } from '../../components/ui/Select.jsx';
-import { FormField } from '../../components/forms/FormField.jsx';
-import { formatCurrency } from '../../utils/formatCurrency.js';
+import { useMemo, useState } from "react";
+import { Button } from "../../components/ui/Button.jsx";
+import { Input } from "../../components/ui/Input.jsx";
+import { Select } from "../../components/ui/Select.jsx";
+import { FormField } from "../../components/forms/FormField.jsx";
+import { formatCurrency } from "../../utils/formatCurrency.js";
 
-export function VenteForm({ clients = [], produits = [], onSubmit, isLoading }) {
-  const [clientId, setClientId] = useState('');
-  const [produitId, setProduitId] = useState('');
+export function VenteForm({
+  clients = [],
+  produits = [],
+  onSubmit,
+  isLoading,
+}) {
+  const [clientId, setClientId] = useState("");
+  const [produitId, setProduitId] = useState("");
   const [quantite, setQuantite] = useState(1);
-  const [prix, setPrix] = useState('');
+  const [prix, setPrix] = useState("");
 
   const selectedProduit = useMemo(
-    () => produits.find((produit) => String(produit.id_produit) === String(produitId)),
-    [produits, produitId]
+    () =>
+      produits.find(
+        (produit) => String(produit.id_produit) === String(produitId),
+      ),
+    [produits, produitId],
   );
 
-  const prixUnitaire = prix !== '' ? Number(prix) : selectedProduit?.prix_ht ?? 0;
+  const prixUnitaire =
+    prix !== "" ? Number(prix) : (selectedProduit?.prix_ht ?? 0);
   const total = quantite * prixUnitaire;
 
   const handleSubmit = (event) => {
     event.preventDefault();
     onSubmit({
       client_id: clientId,
-      articles: [{
-        produit_id: produitId,
-        quantite: Number(quantite),
-        prix: prix !== '' ? Number(prix) : undefined,
-      }],
+      articles: [
+        {
+          produit_id: produitId,
+          quantite: Number(quantite),
+          prix: prix !== "" ? Number(prix) : undefined,
+        },
+      ],
     });
   };
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
       <FormField label="Client">
-        <Select name="client_id" required value={clientId} onChange={(event) => setClientId(event.target.value)}>
+        <Select
+          name="client_id"
+          required
+          value={clientId}
+          onChange={(event) => setClientId(event.target.value)}
+        >
           <option value="">Choisir</option>
           {clients.map((client) => (
             <option key={client.id_client} value={client.id_client}>
@@ -51,7 +67,9 @@ export function VenteForm({ clients = [], produits = [], onSubmit, isLoading }) 
           value={produitId}
           onChange={(event) => {
             setProduitId(event.target.value);
-            const produit = produits.find((item) => String(item.id_produit) === String(event.target.value));
+            const produit = produits.find(
+              (item) => String(item.id_produit) === String(event.target.value),
+            );
             if (produit && produit.prix_ht !== undefined) {
               setPrix(String(produit.prix_ht));
             }
@@ -91,7 +109,9 @@ export function VenteForm({ clients = [], produits = [], onSubmit, isLoading }) 
 
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950 md:col-span-2">
         <p className="text-sm text-slate-500">Total calculé</p>
-        <p className="text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(total)}</p>
+        <p className="text-2xl font-semibold text-slate-950 dark:text-white">
+          {formatCurrency(total)}
+        </p>
       </div>
 
       <div className="md:col-span-2">

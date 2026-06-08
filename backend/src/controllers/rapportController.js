@@ -4,15 +4,30 @@ export const getFactures = async (req, res) => {
     const entreprise_id = req.user.entreprise_id;
     try {
         const [rows] = await pool.query(
-            `SELECT v.id_ventes, v.numero_facture, v.date_vente, v.montant_ttc,
+            `SELECT v.id_ventes,
+                    COALESCE(v.numero_facture, v.id_ventes) AS id_vente,
+                    COALESCE(v.numero_facture, v.id_ventes) AS id_facture,
+                    v.numero_facture,
+                    v.date_vente,
+                    COALESCE(NULLIF(v.montant_ttc, 0), IFNULL(line_totals.total_ttc, 0)) AS montant_ttc,
+                    COALESCE(NULLIF(v.montant_ttc, 0), IFNULL(line_totals.total_ttc, 0)) AS montant_total_ttc,
+                    COALESCE(NULLIF(v.montant_ttc, 0), IFNULL(line_totals.total_ttc, 0)) AS total_ttc,
                     c.id_client, c.nom AS client_nom, c.postnom AS client_postnom,
-                    IFNULL(SUM(p.montant), 0) AS total_paye,
-                    (v.montant_ttc - IFNULL(SUM(p.montant), 0)) AS reste_a_payer
+                    IFNULL(pay.total_paye, 0) AS total_paye,
+                    (COALESCE(NULLIF(v.montant_ttc, 0), IFNULL(line_totals.total_ttc, 0)) - IFNULL(pay.total_paye, 0)) AS reste_a_payer
              FROM ventes v
              JOIN client c ON c.id_client = v.client_id
-             LEFT JOIN paiement p ON p.vente_id = v.id_ventes
+             LEFT JOIN (
+                SELECT vente_id, SUM(montant) AS total_paye
+                FROM paiement
+                GROUP BY vente_id
+             ) pay ON pay.vente_id = v.id_ventes
+             LEFT JOIN (
+                SELECT vente_id, SUM(quantite * prix_unitaire_ht) * 1.16 AS total_ttc
+                FROM lignes_ventes
+                GROUP BY vente_id
+             ) line_totals ON line_totals.vente_id = v.id_ventes
              WHERE v.entreprise_id = ?
-             GROUP BY v.id_ventes
              ORDER BY v.date_vente DESC`,
             [entreprise_id]
         );

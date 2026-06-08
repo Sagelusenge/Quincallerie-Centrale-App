@@ -21,9 +21,9 @@ export function RapportsPage() {
       <Card className="p-5">
         <h2 className="mb-4 text-lg font-semibold">Factures</h2>
         <Table data={factures.data || []} columns={[
-          { key: 'id_vente', header: 'Facture' },
+          { key: 'id_vente', header: 'Facture', render: (row) => row.id_vente || row.id_facture || row.numero_facture || row.id_ventes || '-' },
           { key: 'client_nom', header: 'Client' },
-          { key: 'montant_total_ttc', header: 'Total', render: (row) => formatCurrency(row.montant_total_ttc || row.total_ttc) },
+          { key: 'montant_total_ttc', header: 'Total', render: (row) => formatCurrency(row.montant_total_ttc ?? row.total_ttc ?? row.montant_ttc) },
         ]} />
       </Card>
       <div className="grid gap-6 xl:grid-cols-2">

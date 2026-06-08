@@ -154,6 +154,9 @@ export const ensureRuntimeSchema = async (pool) => {
     await addColumnIfMissing('user_activity_logs', 'metadata', 'JSON NULL');
     await addColumnIfMissing('user_activity_logs', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
 
+    await addColumnIfMissing('client', 'postnom', 'VARCHAR(100) NULL');
+    await addColumnIfMissing('client', 'telephone', 'VARCHAR(20) NULL');
+
     const [productColumns] = await pool.query(`
         SELECT COLUMN_NAME
         FROM INFORMATION_SCHEMA.COLUMNS
@@ -191,5 +194,16 @@ export const ensureRuntimeSchema = async (pool) => {
     await pool.query(`
         ALTER TABLE notifications
         MODIFY recipient_type ENUM('user','manager') NOT NULL DEFAULT 'user'
+    `).catch(() => null);
+
+    await pool.query(`
+        UPDATE ventes v
+        JOIN (
+            SELECT vente_id, SUM(quantite * prix_unitaire_ht) * 1.16 AS total_ttc
+            FROM lignes_ventes
+            GROUP BY vente_id
+        ) lignes ON lignes.vente_id = v.id_ventes
+        SET v.montant_ttc = lignes.total_ttc
+        WHERE v.montant_ttc IS NULL OR v.montant_ttc = 0
     `).catch(() => null);
 };

@@ -2,6 +2,7 @@ import express from 'express';
 import { 
     getAllVentes, 
     getVenteById, 
+    getVentePdf,
     createVente,
     updateVente,
     deleteVente
@@ -15,6 +16,12 @@ router.get('/',
     protect, 
     authorizeRoles('manager', 'caissier'), 
     getAllVentes
+);
+
+router.get('/:id/pdf',
+    protect,
+    authorizeRoles('manager', 'caissier'),
+    getVentePdf
 );
 
 router.get('/:id', 
