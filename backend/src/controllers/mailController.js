@@ -1,14 +1,18 @@
-import { isMailReady, sendMail } from '../services/mailService.js';
+import { getMailSender, isMailReady, sendMail } from '../services/mailService.js';
 import pool from '../config/db.js';
 
-export const getMailStatus = (req, res) => {
-    res.json({
-        success: true,
-        data: {
-            ready: isMailReady(),
-            sender: req.user?.email || process.env.EMAIL_USER || null
-        }
-    });
+export const getMailStatus = async (req, res) => {
+    try {
+        res.json({
+            success: true,
+            data: {
+                ready: await isMailReady(),
+                sender: req.user?.email || await getMailSender()
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 };
 
 export const getMailMessages = async (req, res) => {
@@ -39,6 +43,7 @@ export const sendCustomMail = async (req, res) => {
     }
 
     try {
+        const senderEmail = req.user?.email || await getMailSender();
         const result = await sendMail({
             to,
             subject,
@@ -59,7 +64,7 @@ export const sendCustomMail = async (req, res) => {
             [
                 req.user?.entreprise_id || null,
                 req.user?.id || null,
-                req.user?.email || process.env.EMAIL_USER || null,
+                senderEmail,
                 to,
                 subject,
                 message,
@@ -109,6 +114,7 @@ export const sendTeamNotification = async (req, res) => {
         }
 
         await connection.beginTransaction();
+        const senderEmail = req.user?.email || await getMailSender();
 
         const notificationRows = users.map((item) => [
             'user',
@@ -132,7 +138,7 @@ export const sendTeamNotification = async (req, res) => {
             [
                 entreprise_id,
                 req.user?.id || null,
-                req.user?.email || process.env.EMAIL_USER || null,
+                senderEmail,
                 'Tous les utilisateurs',
                 subject,
                 message,
